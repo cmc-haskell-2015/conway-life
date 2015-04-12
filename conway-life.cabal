@@ -18,9 +18,10 @@ cabal-version:       >=1.10
 
 executable conway-life
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Init, Game
   -- other-extensions:    
-  build-depends:       base >=4.6 && <4.8
+  build-depends:       base >=4.6 && <4.8 
+                       , matrix
   hs-source-dirs:      src
   default-language:    Haskell2010
 
