@@ -6,12 +6,20 @@ import Data.Matrix
 import Game
 
 initUni :: [(Int, Int)] -> Universe
-initUni l =  Universe . fromLists . reverse . map reverse $ 
-    if length l >= 1 then initState x y (tail l) else defState where
-                                                         x = fst (head l) - 1
-                                                         y = snd (head l) - 1
+initUni l = if length l >= 1 then 
+                fromLists . reverse . map reverse $ (initState x y (tail l)) 
+            else defState where
+                            x = fst (head l) - 1
+                            y = snd (head l) - 1
 
-defState = [[]]
+defState :: Universe
+defState = matrix 20 20 glider
+
+glider :: (Int, Int) -> Cell
+glider (i, j) | (i == 2) && (j == 1) || 
+                (i == 3) && (j == 2) ||
+                (i <= 3) && (j == 3) = Alive
+              | otherwise = Dead
 
 initState :: Int -> Int -> [(Int, Int)] -> [[Cell]]
 initState (-1) _ _ = []
