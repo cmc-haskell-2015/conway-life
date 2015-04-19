@@ -3,6 +3,7 @@ module Main where
 import Control.Exception
 import Init
 import Game
+import Graphics.Gloss
 
 main :: IO ()
 main = do 
@@ -11,4 +12,4 @@ main = do
     result <- try $ readFile config :: IO (Either IOException String)
     case result of
       Left exception -> putStrLn $ "Error: " ++ show exception
-      Right content -> putStrLn . show . initUni . positions $ content
+      Right content -> run . initUni . positions $ content
