@@ -7,7 +7,8 @@ import Game
 
 initUni :: [(Int, Int)] -> Universe
 initUni l = if length l > 1 then 
-                fromLists . reverse . map reverse $ (initState x y (tail l)) 
+                transpose . fromLists . reverse . map reverse $ 
+                                                  (initState x y (tail l)) 
             else defState where
                             x = fst (head l) - 1
                             y = snd (head l) - 1
