@@ -3,7 +3,7 @@ module Main where
 import Control.Exception
 import Init
 import Game
-import Graphics.Gloss
+import Graphics
 
 main :: IO ()
 main = do 

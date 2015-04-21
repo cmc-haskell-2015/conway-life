@@ -18,7 +18,7 @@ cabal-version:       >=1.10
 
 executable conway-life
   main-is:             Main.hs
-  other-modules:       Init, Game
+  other-modules:       Init, Graphics, Game
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.8 
                        , matrix, gloss
