@@ -14,7 +14,7 @@ isAlive :: Cell -> Bool
 isAlive Alive = True
 isAlive Dead = False
 
---Get more neighbourhood of a cell as a list of neighbouring cells
+--Get Moore neighbourhood of a cell as a list of neighbouring cells
 getNeighbours :: Universe -> Int -> Int -> [Cell]
 getNeighbours u x y = [u ! (i, j) | i <- [x - 1 .. x + 1], 
                                     j <- [y - 1 .. y + 1],
