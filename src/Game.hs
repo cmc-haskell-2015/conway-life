@@ -6,8 +6,15 @@ data Cell = Dead | Alive deriving (Show)
 
 type Universe = (Matrix Cell)
 
+--Right for generator, Left for simple universe
+type World = (Either Universe Universe)
+
 cellSize :: Float
 cellSize = 24
+
+inverseCell :: Cell -> Cell
+inverseCell Dead = Alive
+inverseCell Alive = Dead
 
 --Check if the cell is alive
 isAlive :: Cell -> Bool
@@ -18,8 +25,8 @@ isAlive Dead = False
 getNeighbours :: Universe -> Int -> Int -> [Cell]
 getNeighbours u x y = [u ! (i, j) | i <- [x - 1 .. x + 1], 
                                     j <- [y - 1 .. y + 1],
-                                    i >= 1, i <= (ncols u),
-                                    j >= 1, j <= (nrows u),
+                                    i >= 1, i <= (nrows u),
+                                    j >= 1, j <= (ncols u),
                                     i /= x || j /= y]
 
 --Updates the cell according to the number of its neighbours

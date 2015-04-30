@@ -2,37 +2,63 @@ module Graphics where
 
 import Data.Matrix
 import Graphics.Gloss
+import Graphics.Gloss.Interface.Pure.Game
 import Game
+import Init
 
 --Main function for drawing universe
-run :: Universe -> IO ()
-run universe = play (InWindow "Conway`s Life" (windowSize universe) (240, 160)) 
-               white 2 universe renderer handler updater
+run :: World -> IO ()
+run world = case world of
+            Left u -> play (InWindow "Conway`s Life" (windowSize u) (10, 10)) 
+                      white 2 world renderer handler updater
+            Right g -> play (InWindow "Conway`s Life" (windowSize g) (10, 10)) 
+                       white 2 world renderer handler updater
 
 --Calculate window size for current universe size
 windowSize :: Universe -> (Int, Int)
 windowSize u = ((round cellSize) * (nrows u), (round cellSize) * (ncols u))
 
 --Update the universe on each step
-updater :: Float -> Universe -> Universe
-updater _ u = stepUniverse u
+updater :: Float -> World -> World
+updater _ (Left u) = Left (stepUniverse u)
+updater _ w = w
 
---Event handler, useless now but helpful in bonus part
-handler _ = id
+handler :: Event -> World -> World
+handler (EventKey (MouseButton LeftButton) Down _ (x, y)) (Right g) = 
+    let (windowWidth, windowHeight) = windowSize g
+        offsetX = fromIntegral windowWidth / 2
+        offsetY = fromIntegral windowHeight / 2
+        i = round ((x + offsetX + cellSize / 2) / cellSize)
+        j = round ((y + offsetY + cellSize / 2) / cellSize)
+    in Right (setElem (inverseCell $ g ! (i, j)) (i, j) g)
+handler (EventKey (SpecialKey KeyEnter) Down _ _) w = case w of
+    Left u -> Right u
+    Right g -> Left g
+handler (EventKey (SpecialKey KeyF1) Down _ _) (Right g) = 
+    Right (loadState g glider)
+handler (EventKey (SpecialKey KeyF2) Down _ _) (Right g) = 
+    Right (loadState g test)
+handler (EventKey (SpecialKey KeySpace) Down _ _) (Right g) = 
+    Right (defState (nrows g) (ncols g))
+handler _ w = w
 
 --Render a picture for each step
-renderer :: Universe -> Picture
-renderer u = let (windowWidth, windowHeight) = windowSize u
-                 offsetX = - fromIntegral windowWidth / 2
-                 offsetY = - fromIntegral windowHeight / 2
-             in translate offsetX offsetY (drawUniverse u)
+renderer :: World -> Picture
+renderer (Left u) = let (windowWidth, windowHeight) = windowSize u
+                        offsetX = - fromIntegral windowWidth / 2
+                        offsetY = - fromIntegral windowHeight / 2
+                    in translate offsetX offsetY (drawUniverse u)
+renderer (Right g) = let (windowWidth, windowHeight) = windowSize g
+                         offsetX = - fromIntegral windowWidth / 2
+                         offsetY = - fromIntegral windowHeight / 2
+                     in translate offsetX offsetY (drawUniverse g)
 
 --Create a picture as a list (superposition) of cells 
 drawUniverse :: Universe -> Picture
 drawUniverse u = pictures [drawCell 
-                           (fromIntegral (x - 1)) (fromIntegral (y - 1)) 
-                           (u ! (x, y)) 
-                           | x <- [1 .. (ncols u)], y <- [1 .. (nrows u)]]
+                 (fromIntegral (x - 1)) (fromIntegral (y - 1)) 
+                 (u ! (x, y)) 
+                 | x <- [1 .. (nrows u)], y <- [1 .. (ncols u)]]
 
 --Create picture of dead (empty rectangle) or alive (solid rectangle) cell
 drawCell :: Float -> Float -> Cell -> Picture
