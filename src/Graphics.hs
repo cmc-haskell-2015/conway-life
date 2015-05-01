@@ -34,10 +34,6 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y)) (Right g) =
 handler (EventKey (SpecialKey KeyEnter) Down _ _) w = case w of
     Left u -> Right u
     Right g -> Left g
-handler (EventKey (SpecialKey KeyF1) Down _ _) (Right g) = 
-    Right (loadState g glider)
-handler (EventKey (SpecialKey KeyF2) Down _ _) (Right g) = 
-    Right (loadState g test)
 handler (EventKey (SpecialKey KeySpace) Down _ _) (Right g) = 
     Right (defState (nrows g) (ncols g))
 handler _ w = w
