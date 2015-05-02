@@ -9,14 +9,14 @@ import Init
 --Main function for drawing universe
 run :: World -> IO ()
 run world = case world of
-            Left u -> play (InWindow "Conway`s Life" (windowSize u) (10, 10)) 
+            Left u -> play (InWindow "Conway`s Life" windowSize (10, 10)) 
                       white 2 world renderer handler updater
-            Right g -> play (InWindow "Conway`s Life" (windowSize g) (10, 10)) 
+            Right g -> play (InWindow "Conway`s Life" windowSize (10, 10)) 
                        white 2 world renderer handler updater
 
 --Calculate window size for current universe size
-windowSize :: Universe -> (Int, Int)
-windowSize u = ((round cellSize) * (nrows u), (round cellSize) * (ncols u))
+windowSize :: (Int, Int)
+windowSize = ((round cellSize) * size, (round cellSize) * size)
 
 --Update the universe on each step
 updater :: Float -> World -> World
@@ -25,7 +25,7 @@ updater _ w = w
 
 handler :: Event -> World -> World
 handler (EventKey (MouseButton LeftButton) Down _ (x, y)) (Right g) = 
-    let (windowWidth, windowHeight) = windowSize g
+    let (windowWidth, windowHeight) = windowSize
         offsetX = fromIntegral windowWidth / 2
         offsetY = fromIntegral windowHeight / 2
         i = round ((x + offsetX + cellSize / 2) / cellSize)
@@ -35,16 +35,16 @@ handler (EventKey (SpecialKey KeyEnter) Down _ _) w = case w of
     Left u -> Right u
     Right g -> Left g
 handler (EventKey (SpecialKey KeySpace) Down _ _) (Right g) = 
-    Right (defState (nrows g) (ncols g))
+    Right defState
 handler _ w = w
 
 --Render a picture for each step
 renderer :: World -> Picture
-renderer (Left u) = let (windowWidth, windowHeight) = windowSize u
+renderer (Left u) = let (windowWidth, windowHeight) = windowSize
                         offsetX = - fromIntegral windowWidth / 2
                         offsetY = - fromIntegral windowHeight / 2
                     in translate offsetX offsetY (drawUniverse u)
-renderer (Right g) = let (windowWidth, windowHeight) = windowSize g
+renderer (Right g) = let (windowWidth, windowHeight) = windowSize
                          offsetX = - fromIntegral windowWidth / 2
                          offsetY = - fromIntegral windowHeight / 2
                      in translate offsetX offsetY (drawUniverse g)

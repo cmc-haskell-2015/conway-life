@@ -7,7 +7,7 @@ data Cell = Dead | Alive deriving (Show)
 type Universe = (Matrix Cell)
 
 --Right for generator, Left for simple universe
-type World = (Either Universe Universe)
+type World = Either Universe Universe
 
 cellSize :: Float
 cellSize = 24

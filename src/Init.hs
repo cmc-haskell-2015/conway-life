@@ -5,14 +5,17 @@ import Data.Matrix
 import Text.Read
 import Game
 
+size :: Int
+size = 25
+
 --Create a matrix of dead/alive cells
 loadState :: Universe -> [(Int, Int)] -> Universe
 loadState u l = fromLists . reverse . map reverse $
                                 (initState (nrows u - 1) (ncols u - 1) l) 
 
 --Default state
-defState :: Int -> Int -> Universe
-defState width height = matrix width height ( \ _ -> Dead )
+defState :: Universe
+defState = matrix size size ( \ _ -> Dead )
 
 --Make list of lists of cells to be later transformed into matrix
 initState :: Int -> Int -> [(Int, Int)] -> [[Cell]]
