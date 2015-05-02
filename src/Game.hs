@@ -11,12 +11,12 @@ type Coords = (Int, Int)
 --Right for generator, Left for simple universe
 data World = World
                 { universe :: (Either Universe Universe) 
-                , objPanel :: ObjectPanel 
-                , cfgPanel :: ConfigPanel }    
+                , obj :: Objects 
+                , cfg :: Configs }    
 
-data ObjectPanel = ObjectPanel
+data Objects = Objects
 
-data ConfigPanel = ConfigPanel
+data Configs = Configs
 
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive

@@ -30,6 +30,11 @@ updater :: Float -> World -> World
 updater _ (World (Left u) x y)= World (Left (stepUniverse u)) x y
 updater _ w = w
 
+--Handle events from mouse and keyboard
+{- TODO: left - switch to objects menu
+         right - switch to config menu
+         up/down - scroll current menu
+-}
 handler :: Event -> World -> World
 handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
         (World (Right g) o c) = 
@@ -49,6 +54,7 @@ handler (EventKey (SpecialKey KeySpace) Down _ _) (World (Right g) o c) =
 handler _ w = w
 
 --Render a picture for each step
+-- TODO: draw panels
 renderer :: World -> Picture
 renderer (World (Left u) o c) = let offsetX = - fromIntegral windowWidth / 2
                                     offsetY = - fromIntegral windowHeight / 2
