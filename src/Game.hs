@@ -9,9 +9,6 @@ type Universe = (Matrix Cell)
 --Right for generator, Left for simple universe
 type World = Either Universe Universe
 
-cellSize :: Float
-cellSize = 24
-
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive
 inverseCell Alive = Dead
