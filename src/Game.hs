@@ -7,7 +7,14 @@ data Cell = Dead | Alive deriving (Show)
 type Universe = (Matrix Cell)
 
 --Right for generator, Left for simple universe
-type World = Either Universe Universe
+data World = World
+                { universe :: (Either Universe Universe) 
+                , objPanel :: ObjectPanel 
+                , cfgPanel :: ConfigPanel }    
+
+data ObjectPanel = ObjectPanel
+
+data ConfigPanel = ConfigPanel
 
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive

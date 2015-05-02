@@ -12,10 +12,7 @@ cellSize = 24
 
 --Main function for drawing universe
 run :: World -> IO ()
-run world = case world of
-            Left u -> play (InWindow "Conway`s Life" windowSize (10, 10)) 
-                      white 2 world renderer handler updater
-            Right g -> play (InWindow "Conway`s Life" windowSize (10, 10)) 
+run world = play (InWindow "Conway`s Life" windowSize (10, 10)) 
                        white 2 world renderer handler updater
 
 --Calculate window size for current universe size
@@ -30,31 +27,35 @@ windowHeight = snd windowSize
 
 --Update the universe on each step
 updater :: Float -> World -> World
-updater _ (Left u) = Left (stepUniverse u)
+updater _ (World (Left u) x y)= World (Left (stepUniverse u)) x y
 updater _ w = w
 
 handler :: Event -> World -> World
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) (Right g) = 
-    let offsetX = fromIntegral windowWidth /2
+handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
+        (World (Right g) o c) = 
+    let offsetX = fromIntegral windowWidth / 2
         offsetY = fromIntegral windowHeight / 2
         i = round ((x + offsetX + cellSize / 2) / cellSize)
         j = round ((y + offsetY + cellSize / 2) / cellSize)
-    in Right (setElem (inverseCell $ g ! (i, j)) (i, j) g)
-handler (EventKey (SpecialKey KeyEnter) Down _ _) w = case w of
-    Left u -> Right u
-    Right g -> Left g
-handler (EventKey (SpecialKey KeySpace) Down _ _) (Right g) = 
-    Right defState
+    in 
+        if (i <= size) && (j <= size) then 
+            World (Right (setElem (inverseCell $ g ! (i, j)) (i, j) g)) o c
+        else World (Right g) o c
+handler (EventKey (SpecialKey KeyEnter) Down _ _) (World w o c) = case w of
+    Left u -> World (Right u) o c
+    Right g -> World (Left g) o c
+handler (EventKey (SpecialKey KeySpace) Down _ _) (World (Right g) o c) = 
+    World (Right defState) o c
 handler _ w = w
 
 --Render a picture for each step
 renderer :: World -> Picture
-renderer (Left u) = let offsetX = - fromIntegral windowWidth / 2
-                        offsetY = - fromIntegral windowHeight / 2
-                    in translate offsetX offsetY (drawUniverse u)
-renderer (Right g) = let offsetX = - fromIntegral windowWidth / 2
-                         offsetY = - fromIntegral windowHeight / 2
-                     in translate offsetX offsetY (drawUniverse g)
+renderer (World (Left u) o c) = let offsetX = - fromIntegral windowWidth / 2
+                                    offsetY = - fromIntegral windowHeight / 2
+                                in translate offsetX offsetY (drawUniverse u)
+renderer (World (Right g) o c) = let offsetX = - fromIntegral windowWidth / 2
+                                     offsetY = - fromIntegral windowHeight / 2
+                                 in translate offsetX offsetY (drawUniverse g)
 
 --Create a picture as a list (superposition) of cells 
 drawUniverse :: Universe -> Picture

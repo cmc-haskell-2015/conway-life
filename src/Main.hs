@@ -7,4 +7,4 @@ import Control.Applicative
 
 main :: IO ()
 main = do
-    run (Right defState)
+    run $ World (Right defState) ObjectPanel ConfigPanel
