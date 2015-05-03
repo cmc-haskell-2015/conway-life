@@ -1,6 +1,5 @@
 module Init where
 
-import System.Directory
 import Data.Maybe
 import Data.Matrix
 import Text.Read
@@ -14,11 +13,13 @@ size = 25
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
 
---Get config files for objects from DB
--- TODO: everything
-initObjects :: Objects
-initObjects = Objects [] 0
+onlyFiles :: String -> [String] -> [String]
+onlyFiles dir = map (("database/" ++ dir ++ "/") ++)
+                . filter (\x -> (x /= ".") && (x /= ".."))
 
---Get config files for saved configurations
-initConfigs :: Configs
-initConfigs = Configs [] 0
+--Get objects from DB
+initObjects :: [String] -> Objects
+initObjects _ = Objects [] 0
+
+initConfigs :: [String] -> Configs
+initConfigs _ = Configs [] 0
