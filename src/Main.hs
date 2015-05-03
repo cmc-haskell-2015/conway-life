@@ -10,6 +10,12 @@ main :: IO ()
 main = do
     objFiles <- getDirectoryContents "database/objects" 
     confFiles <- getDirectoryContents "database/configs"
-    objs <- sequence . map readFile . onlyFiles "objects" $ objFiles
-    confs <- sequence . map readFile . onlyFiles "configs" $ confFiles
-    run $ World (Right defState) (initObjects objs) (initConfigs confs)
+    let objNames = onlyFiles "objects" objFiles
+    let confNames = onlyFiles "configs" confFiles
+    objs <- sequence . map readFile $ objNames
+    confs <- sequence . map readFile $ confNames
+    let o = zip (map shortName objNames) objs
+    let c = zip (map shortName confNames) confs
+    print o
+    print c
+    run $ World (Right defState) (initObjects o) (initConfigs c)
