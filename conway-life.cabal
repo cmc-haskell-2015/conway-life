@@ -21,7 +21,9 @@ executable conway-life
   other-modules:       Init, Graphics, Game
   -- other-extensions:    
   build-depends:       base >=4.6 && <4.8 
-                       , matrix, gloss
+                       , matrix
+                       , gloss
+                       , directory
   hs-source-dirs:      src
   default-language:    Haskell2010
 

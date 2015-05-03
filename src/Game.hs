@@ -8,15 +8,25 @@ type Universe = (Matrix Cell)
 
 type Coords = (Int, Int)
 
+type Location = [Coords]
+
 --Right for generator, Left for simple universe
 data World = World
                 { universe :: (Either Universe Universe) 
                 , obj :: Objects 
                 , cfg :: Configs }    
 
-data Objects = Objects
+data Object = Object 
+                { name :: String
+                , coords :: Location }
+
+data Objects = Objects 
+                 { oList :: [Object]
+                 , oNum :: Int }
 
 data Configs = Configs
+                 { cList :: [Object]
+                 , cNum :: Int }
 
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive
