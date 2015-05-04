@@ -3,6 +3,7 @@ module Init where
 import Data.Maybe
 import Data.Matrix
 import Text.Read
+import Control.Applicative
 import Game
 
 type Name = String
@@ -26,7 +27,21 @@ shortName s = iterate (tail . dropWhile (/= '/')) s !! 2
 
 --Get objects from DB
 initObjects :: [(Name, Content)] -> Objects
-initObjects _ = Objects [] 0
+initObjects l = Objects (map object l) (length l)
 
 initConfigs :: [(Name, Content)] -> Configs
-initConfigs _ = Configs [] 0
+initConfigs l = Configs (map object l) (length l)
+
+object :: (Name, Content) -> Object
+object (n, c) = Object n (getCoords c)
+
+getCoords :: Content -> Location
+getCoords s = readInts <$> makeTuples s1
+                  where s1 = lines s >>= words
+
+makeTuples :: [String] -> [(String, String)]
+makeTuples (x : y : ys) = (x, y) : makeTuples ys
+makeTuples _ = []
+
+readInts :: (String, String) -> (Int, Int)
+readInts (x, y) = (read x, read y)

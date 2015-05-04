@@ -16,6 +16,5 @@ main = do
     confs <- sequence . map readFile $ confNames
     let o = zip (map shortName objNames) objs
     let c = zip (map shortName confNames) confs
-    print o
-    print c
+    print (map getCoords objs)
     run $ World (Right defState) (initObjects o) (initConfigs c)
