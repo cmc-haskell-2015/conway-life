@@ -3,17 +3,21 @@ module Graphics where
 import Data.Matrix
 import Data.Monoid
 import Graphics.Gloss
-import Graphics.Gloss.Interface.Pure.Game
+import Graphics.Gloss.Interface.IO.Game
 import Game
-import Init
+import Files
+import System.Exit
 
 cellSize :: Float
 cellSize = 24
 
 --Main function for drawing universe
 run :: World -> IO ()
-run world = play (InWindow "Conway`s Life" windowSize (10, 10)) 
-                       white 2 world renderer handler updater
+run world = playIO (InWindow "Conway`s Life" windowSize (10, 10)) 
+                       white 2 world 
+                       (return . renderer) 
+                       handler 
+                       (\x y -> return $ updater x y)
 
 --Calculate window size for current universe size
 windowSize :: (Int, Int)
@@ -27,7 +31,7 @@ windowHeight = snd windowSize
 
 --Update the universe on each step
 updater :: Float -> World -> World
-updater _ (World (Left u) x y)= World (Left (stepUniverse u)) x y
+updater _ (World (Left u) x y) = World (Left (stepUniverse u)) x y
 updater _ w = w
 
 --Handle events from mouse and keyboard
@@ -35,23 +39,26 @@ updater _ w = w
          right - switch to config menu
          up/down - scroll current menu
 -}
-handler :: Event -> World -> World
+handler :: Event -> World -> IO World
 handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
         (World (Right g) o c) = 
     let offsetX = fromIntegral windowWidth / 2
         offsetY = fromIntegral windowHeight / 2
         i = round ((x + offsetX + cellSize / 2) / cellSize)
         j = round ((y + offsetY + cellSize / 2) / cellSize)
-    in 
+    in return $
         if (i <= size) && (j <= size) then 
             World (Right (setElem (inverseCell $ g ! (i, j)) (i, j) g)) o c
         else World (Right g) o c
-handler (EventKey (SpecialKey KeyEnter) Down _ _) (World w o c) = case w of
+handler (EventKey (SpecialKey KeyEnter) Down _ _) (World w o c) = return $
+    case w of
     Left u -> World (Right u) o c
     Right g -> World (Left g) o c
 handler (EventKey (SpecialKey KeySpace) Down _ _) (World (Right g) o c) = 
-    World (Right defState) o c
-handler _ w = w
+    return $ World (Right defState) o c
+handler (EventKey (SpecialKey KeyEsc) Down _ _) _ = exitSuccess 
+handler (EventKey (SpecialKey KeyF2) Down _ _) w = saveWorld w
+handler _ w = return w
 
 --Render a picture for each step
 -- TODO: draw panels

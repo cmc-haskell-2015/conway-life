@@ -1,4 +1,4 @@
-module Init where
+module Files where
 
 import Data.Maybe
 import Data.Monoid
@@ -8,14 +8,6 @@ import Control.Applicative
 import Game
 
 type Content = String
-
---Constant field size
-size :: Int
-size = 25
-
---Default state
-defState :: Universe
-defState = matrix size size ( \ _ -> Dead )
 
 onlyFiles :: String -> [String] -> [Name]
 onlyFiles dir = map (("database/" ++ dir ++ "/") ++)
@@ -56,3 +48,15 @@ checkInts :: (Maybe Int, Maybe Int) -> Maybe Location -> Maybe Location
 checkInts (Just x, Just y) Nothing = Nothing
 checkInts (Just x, Just y) acc = (pure [(x, y)]) <> acc
 checkInts _ _ = Nothing
+
+saveWorld :: World -> IO World
+saveWorld (World u o c) = do
+    saveUni . getUni $ u
+    return (World u o c)
+
+saveUni :: Universe -> IO ()
+saveUni = undefined
+
+getUni :: Either Universe Universe -> Universe
+getUni (Left u) = u
+getUni (Right u) = u

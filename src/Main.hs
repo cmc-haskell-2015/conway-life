@@ -1,6 +1,6 @@
 module Main where
 
-import Init
+import Files
 import Game
 import Graphics
 import Control.Applicative

@@ -30,6 +30,14 @@ data Configs = Configs
                  { cList :: [Object]
                  , cNum :: Int }
 
+--Constant field size
+size :: Int
+size = 25
+
+--Default state
+defState :: Universe
+defState = matrix size size ( \ _ -> Dead )
+
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive
 inverseCell Alive = Dead
