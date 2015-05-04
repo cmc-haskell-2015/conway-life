@@ -1,12 +1,11 @@
 module Init where
 
 import Data.Maybe
+import Data.Monoid
 import Data.Matrix
 import Text.Read
 import Control.Applicative
 import Game
-
-type Name = String
 
 type Content = String
 
@@ -26,22 +25,34 @@ shortName :: Name -> Name
 shortName s = iterate (tail . dropWhile (/= '/')) s !! 2
 
 --Get objects from DB
-initObjects :: [(Name, Content)] -> Objects
-initObjects l = Objects (map object l) (length l)
+initObjects :: [Name] -> [Content] -> IO [Object]
+initObjects n c = catchErrors $ zip n (getCoords <$> c)
 
-initConfigs :: [(Name, Content)] -> Configs
-initConfigs l = Configs (map object l) (length l)
+catchErrors :: [(Name, Maybe Location)] -> IO [Object]
+catchErrors [] = return []
+catchErrors ((n, Nothing) : cdr) = do 
+    putStrLn $ "Error reading database: file '" ++ n ++ "' wasn't loaded"
+    catchErrors cdr
+catchErrors ((n, Just []) : cdr) = do 
+    putStrLn $ "Error reading database: file '" ++ n ++ "' wasn't loaded"
+    catchErrors cdr
+catchErrors ((n, Just c) : cdr) = (:) <$> (return (Object n c)) 
+                                      <*> catchErrors cdr
+                                   
 
-object :: (Name, Content) -> Object
-object (n, c) = Object n (getCoords c)
-
-getCoords :: Content -> Location
-getCoords s = readInts <$> makeTuples s1
+getCoords :: Content -> Maybe Location
+getCoords s | odd (length s1) = Nothing
+            | otherwise = readInts . makeTuples $ s1
                   where s1 = lines s >>= words
 
-makeTuples :: [String] -> [(String, String)]
-makeTuples (x : y : ys) = (x, y) : makeTuples ys
+makeTuples :: [String] -> [(Maybe Int, Maybe Int)]
+makeTuples (x : y : ys) = (readMaybe x, readMaybe y) : makeTuples ys
 makeTuples _ = []
 
-readInts :: (String, String) -> (Int, Int)
-readInts (x, y) = (read x, read y)
+readInts :: [(Maybe Int, Maybe Int)] -> Maybe Location
+readInts = foldr checkInts (pure [])
+
+checkInts :: (Maybe Int, Maybe Int) -> Maybe Location -> Maybe Location
+checkInts (Just x, Just y) Nothing = Nothing
+checkInts (Just x, Just y) acc = (pure [(x, y)]) <> acc
+checkInts _ _ = Nothing

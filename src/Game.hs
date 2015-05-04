@@ -10,6 +10,8 @@ type Coords = (Int, Int)
 
 type Location = [Coords]
 
+type Name = String
+
 --Right for generator, Left for simple universe
 data World = World
                 { universe :: (Either Universe Universe) 
@@ -17,8 +19,8 @@ data World = World
                 , cfg :: Configs }    
 
 data Object = Object 
-                { name :: String
-                , coords :: Location }
+                { name :: Name
+                , coords :: Location } deriving (Show)
 
 data Objects = Objects 
                  { oList :: [Object]
