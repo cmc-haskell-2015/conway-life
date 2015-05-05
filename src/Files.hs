@@ -4,7 +4,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.Matrix
 import qualified Data.Foldable as F
-import Data.Time.Clock
+import Data.Time
 import Text.Read
 import Control.Applicative
 import Game
@@ -59,10 +59,9 @@ saveWorld (World u o c) = do
 saveUni :: Universe -> IO ()
 saveUni u = do
     t <- getCurrentTime
-    --let name = "database/configs/cfg" ++ show t
-    writeFile ("database/configs/cfg") (makeConfig u)
-    putStrLn "Save"
-    --putStrLn $ "Configuration saved to " ++ name
+    let name = "database/configs/cfg" ++ show t
+    writeFile name (makeConfig u)
+    putStrLn $ "Configuration saved to " ++ name
 
 makeConfig :: Universe -> String
 makeConfig u = getAlive $ F.foldr (++) [] (f cols)
