@@ -3,6 +3,8 @@ module Files where
 import Data.Maybe
 import Data.Monoid
 import Data.Matrix
+import qualified Data.Foldable as F
+import Data.Time.Clock
 import Text.Read
 import Control.Applicative
 import Game
@@ -42,7 +44,7 @@ makeTuples (x : y : ys) = (readMaybe x, readMaybe y) : makeTuples ys
 makeTuples _ = []
 
 readInts :: [(Maybe Int, Maybe Int)] -> Maybe Location
-readInts = foldr checkInts (pure [])
+readInts = F.foldr checkInts (pure [])
 
 checkInts :: (Maybe Int, Maybe Int) -> Maybe Location -> Maybe Location
 checkInts (Just x, Just y) Nothing = Nothing
@@ -55,7 +57,21 @@ saveWorld (World u o c) = do
     return (World u o c)
 
 saveUni :: Universe -> IO ()
-saveUni = undefined
+saveUni u = do
+    t <- getCurrentTime
+    --let name = "database/configs/cfg" ++ show t
+    writeFile ("database/configs/cfg") (makeConfig u)
+    putStrLn "Save"
+    --putStrLn $ "Configuration saved to " ++ name
+
+makeConfig :: Universe -> String
+makeConfig u = getAlive $ F.foldr (++) [] (f cols)
+               where cols = map (zip [1..]) (toLists u)
+                     f = zipWith (\x y -> map (\(p, q) -> (x, p, q)) y) [1..]
+
+getAlive :: [(Int, Int, Cell)] -> String
+getAlive l = F.foldMap (\(x, y, _) -> show x ++ " " ++ show y ++ "\n") alive
+             where alive = filter (\(_, _, c) -> isAlive c) l
 
 getUni :: Either Universe Universe -> Universe
 getUni (Left u) = u
