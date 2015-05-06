@@ -1,8 +1,11 @@
 module Game where
 
 import Data.Matrix
+import Graphics.Gloss
 
 data Cell = Dead | Alive deriving (Show)
+
+data State = Generator | Iterator | CfgMenu | ObjMenu
 
 type Universe = (Matrix Cell)
 
@@ -12,11 +15,13 @@ type Location = [Coords]
 
 type Name = String
 
---Right for generator, Left for simple universe
 data World = World
-                { universe :: (Either Universe Universe) 
+                { universe :: Universe
+                , state :: State
                 , obj :: Objects 
-                , cfg :: Configs }    
+                , cfg :: Configs
+                , selected :: Int
+                , pic :: [Picture] }    
 
 data Object = Object 
                 { name :: Name

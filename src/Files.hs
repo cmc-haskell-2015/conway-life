@@ -52,9 +52,9 @@ checkInts (Just x, Just y) acc = (pure [(x, y)]) <> acc
 checkInts _ _ = Nothing
 
 saveWorld :: World -> IO World
-saveWorld (World u o c) = do
-    saveUni . getUni $ u
-    return (World u o c)
+saveWorld (World u s o c x y) = do
+    saveUni u
+    return (World u s o c x y)
 
 saveUni :: Universe -> IO ()
 saveUni u = do
@@ -71,7 +71,3 @@ makeConfig u = getAlive $ F.foldr (++) [] (f cols)
 getAlive :: [(Int, Int, Cell)] -> String
 getAlive l = F.foldMap (\(x, y, _) -> show x ++ " " ++ show y ++ "\n") alive
              where alive = filter (\(_, _, c) -> isAlive c) l
-
-getUni :: Either Universe Universe -> Universe
-getUni (Left u) = u
-getUni (Right u) = u
