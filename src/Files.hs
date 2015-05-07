@@ -52,9 +52,9 @@ checkInts (Just x, Just y) acc = (pure [(x, y)]) <> acc
 checkInts _ _ = Nothing
 
 saveWorld :: World -> IO World
-saveWorld (World u s o c x y) = do
-    saveUni u
-    return (World u s o c x y)
+saveWorld wor = do
+    saveUni (universe wor)
+    return wor
 
 saveUni :: Universe -> IO ()
 saveUni u = do

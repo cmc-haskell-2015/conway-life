@@ -5,7 +5,7 @@ import Graphics.Gloss
 
 data Cell = Dead | Alive deriving (Show)
 
-data State = Generator | Iterator | CfgMenu | ObjMenu
+data State = Generator | Iterator | CfgMenu Int | ObjMenu Int
 
 type Universe = (Matrix Cell)
 
@@ -21,7 +21,8 @@ data World = World
                 , obj :: Objects 
                 , cfg :: Configs
                 , selected :: Int
-                , pic :: [Picture] }    
+                , pic :: [Picture]    
+                , age :: Integer }
 
 data Object = Object 
                 { name :: Name

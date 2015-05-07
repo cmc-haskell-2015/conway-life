@@ -26,5 +26,15 @@ main = do
     select <- loadBMP "img/select.bmp"
     back <- loadBMP "img/back.bmp"
     stop <- loadBMP "img/stop.bmp"
-    run $ World defState Generator (Objects o (length o)) (Configs c (length c))
-            1 [start, loadcfg, loadobj, clear, save, exit, select, back, stop]
+    left <- loadBMP "img/left.bmp"
+    right <- loadBMP "img/right.bmp"
+    selector1 <- loadBMP "img/selector1.bmp"
+    selector2 <- loadBMP "img/selector2.bmp"
+    run World { universe = defState
+                  , state = Generator
+                  , obj = (Objects o (length o))
+                  , cfg =  (Configs c (length c))
+                  , selected = 1
+                  , pic = [start, loadcfg, loadobj, clear, save, exit, 
+                        select, back, stop, left, right, selector1, selector2]
+                  , age = 0 }
