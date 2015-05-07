@@ -324,48 +324,79 @@ drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $
                     rectangleSolid h h, rectangleWire h h,
                     translate (-100) (h/2 - 40) $ Scale 0.3 0.3 $ 
                     Text $ "Iteration: " ++  (show age)]
-           where h = fromIntegral windowHeight
+               where h = fromIntegral windowHeight
 
 --Drawing menu items
 drawMenu1 :: Int -> [Picture] -> Picture
-drawMenu1 _ pic = pictures [translate w (h + 150) $ pic !! 0,
-                            translate w (h + 90) $ pic !! 1,
-                            translate w (h + 30) $ pic !! 2,
-                            translate w (h - 30) $ pic !! 3,
-                            translate w (h - 90) $ pic !! 4,
-                            translate w (h - 150) $ pic !! 5]
+drawMenu1 m pic = let j = case m of
+                        1 -> h + 150
+                        2 -> h + 90
+                        3 -> h + 30
+                        4 -> h - 30
+                        5 -> h - 90
+                        6 -> h - 150
+                      i = case m of
+                        1 -> 65
+                        2 -> 125
+                        3 -> 125
+                        4 -> 60
+                        5 -> 50
+                        6 -> 50
+                  in pictures [translate w (h + 150) $ pic !! 0,
+                               translate w (h + 90) $ pic !! 1,
+                               translate w (h + 30) $ pic !! 2,
+                               translate w (h - 30) $ pic !! 3,
+                               translate w (h - 90) $ pic !! 4,
+                               translate w (h - 150) $ pic !! 5,
+                               translate (w - 30 - i) j $ pic !! 11,
+                               translate (w + 30 + i) j $ pic !! 12]
                    where w = 1.5 * (fromIntegral windowHeight)
                          h = (fromIntegral windowHeight) / 2
 
 drawMenu2 :: Int -> [Picture] -> Picture
-drawMenu2 _ pic = pictures [translate w (h + 30) $ pic !! 8,
-                            translate w (h - 30) $ pic !! 5]
-                   where w = 1.5 * (fromIntegral windowHeight)
-                         h = (fromIntegral windowHeight) / 2
+drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
+                      i = 50
+                  in pictures [translate w (h + 30) $ pic !! 8,
+                               translate w (h - 30) $ pic !! 5,
+                               translate (w - 30 - i) j $ pic !! 11,
+                               translate (w + 30 + i) j $ pic !! 12]
+                  where w = 1.5 * (fromIntegral windowHeight)
+                        h = (fromIntegral windowHeight) / 2
 
 drawMenu3 :: Int -> [Picture] -> Int -> Configs -> Picture
-drawMenu3 _ pic n c = pictures [translate w (h - 60) $ pic !! 6,
-                                translate w (h - 120) $ pic !! 7,
-                                translate w (h - 180) $ pic !! 5,
-                                translate (w - 200) (h + 10) $ pic !! 9,
-                                translate (w + 200) (h + 10) $ pic !! 10,
-                                translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
+drawMenu3 m pic n c = let j = case m of
+                                1 -> h - 60
+                                2 -> h - 120
+                                3 -> h - 180
+                          i = if m == 1 then 65 else 50
+                      in pictures [translate w (h - 60) $ pic !! 6,
+                                   translate w (h - 120) $ pic !! 7,
+                                   translate w (h - 180) $ pic !! 5,
+                                   translate (w - 200) (h + 10) $ pic !! 9,
+                                   translate (w + 200) (h + 10) $ pic !! 10,
+                                   translate (w - 30 - i) j $ pic !! 11,
+                                   translate (w + 30 + i) j $ pic !! 12,
+                                   translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
                                     Text $ "Config " ++ show n ++ "/" ++ 
                                                         show (cNum c),
-                                translate (w - 80) h $ Scale 0.1 0.1 $
+                                   translate (w - 80) h $ Scale 0.1 0.1 $
                                     Text $ name $ (cList c) !! (n - 1)]
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 
 drawMenu4 :: Int -> [Picture] -> Int -> Objects -> Picture
-drawMenu4 _ pic n o = pictures [translate w (h - 60) $ pic !! 7,
-                                translate w (h - 120) $ pic !! 5,
-                                translate (w - 120) (h + 10) $ pic !! 9,
-                                translate (w + 120) (h + 10) $ pic !! 10,
-                                translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
+drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
+                          i = 50
+                      in pictures [translate w (h - 60) $ pic !! 7,
+                                   translate w (h - 120) $ pic !! 5,
+                                   translate (w - 120) (h + 10) $ pic !! 9,
+                                   translate (w + 120) (h + 10) $ pic !! 10,
+                                   translate (w - 30 - i) j $ pic !! 11,
+                                   translate (w + 30 + i) j $ pic !! 12,
+                                   translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
                                     Text $ "Object " ++ show n ++ "/" ++ 
                                                         show (oNum o),
-                                translate (w - 40) h $ Scale 0.2 0.2 $
+                                   translate (w - 40) h $ Scale 0.2 0.2 $
                                     Text $ name $ (oList o) !! (n - 1)]
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
