@@ -3,7 +3,7 @@ module Game where
 import Data.Matrix
 import Graphics.Gloss
 
-data Cell = Dead | Alive deriving (Show)
+data Cell = Dead | Alive | Half deriving (Show)
 
 data State = Generator | Iterator | CfgMenu Int | ObjMenu Int
 
@@ -43,6 +43,17 @@ size = 25
 --Default state
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
+
+loadConfig :: Object -> Universe
+loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
+                        defState (coords obj)
+
+halfToAlive :: Universe -> Universe
+halfToAlive u = fmap convert u
+
+convert :: Cell -> Cell
+convert Half = Alive
+convert c = c
 
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive

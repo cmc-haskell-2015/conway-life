@@ -167,7 +167,9 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y))
     world@(World u (CfgMenu n)  _ c _ _ _)
     | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
       (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            return $ world
+            return $ world { universe = halfToAlive $ loadConfig $ 
+                                        (cList c) !! (n - 1)
+                           , state = Generator }
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
       (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
             return $ world { state = Generator
@@ -227,7 +229,9 @@ handler (EventKey (SpecialKey KeyLeft) Down _ _)
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
     world@(World u (CfgMenu n) o c m p a) = case m of
-    1 -> return world
+    1 -> return $ world { universe = halfToAlive $ loadConfig $ 
+                                        (cList c) !! (n - 1)
+                        , state = Generator }
     2 -> return $ World u Generator o c 1 p a
     3 -> exitSuccess
 --ObjMenu Events
@@ -307,9 +311,16 @@ renderer (World u s o c m p a) = let offsetX = - fromIntegral windowWidth / 2
                                         Iterator -> drawMenu2 m p
                                         CfgMenu n -> drawMenu3 m p n c
                                         ObjMenu n -> drawMenu4 m p n o
+                                     uni = case s of
+                                        Generator -> u
+                                        Iterator -> u
+                                        CfgMenu n -> loadConfig $ 
+                                            (cList c) !! (n - 1)
+                                        ObjMenu n -> loadConfig $ 
+                                            (oList o) !! (n - 1)
                                   in translate offsetX offsetY $
-                                     pictures [(drawUniverse u), (drawMenu a), 
-                                                menu]
+                                     pictures [(drawUniverse uni), 
+                                               (drawMenu a), menu]
 
 --Create a picture as a list (superposition) of cells 
 drawUniverse :: Universe -> Picture
@@ -404,8 +415,10 @@ drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
 --Create picture of dead (empty rectangle) or alive (solid rectangle) cell
 drawCell :: Float -> Float -> Cell -> Picture
 drawCell x y cell = let figure = case cell of
-                                 Dead -> rectangleWire
-                                 Alive -> rectangleSolid
+                                 Dead -> rectangleWire c c
+                                 Alive -> rectangleSolid c c
+                                 Half -> color (greyN 0.7) $ rectangleSolid c c
                     in translate (cellSize / 2 + cellSize * x)
                                  (cellSize / 2 + cellSize * y)
-                                 (figure cellSize cellSize)
+                                 figure
+                    where c = cellSize
