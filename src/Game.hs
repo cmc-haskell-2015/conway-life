@@ -5,7 +5,8 @@ import Graphics.Gloss
 
 data Cell = Dead | Alive | Half deriving (Show)
 
-data State = Generator | Iterator | CfgMenu Int | ObjMenu Int
+--Coords - last mouse position
+data State = Generator | Iterator | CfgMenu Int | ObjMenu Int (Maybe Coords)
 
 type Universe = (Matrix Cell)
 
@@ -43,6 +44,18 @@ size = 25
 --Default state
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
+
+loadObject :: Universe -> Object -> Maybe Coords -> Universe
+loadObject u obj (Just c) = foldr (loadObjectAux c) u (coords obj)
+loadObject u _ Nothing = u
+
+loadObjectAux :: Coords -> Coords -> Universe -> Universe
+loadObjectAux (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
+                                       (y <= size) && (y >= 1) 
+                                    then setElem Half (x, y) u
+                                    else u
+                                    where x = x1 + x2
+                                          y = y1 + y2
 
 loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
