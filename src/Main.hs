@@ -9,6 +9,7 @@ import System.Directory
 
 main :: IO ()
 main = do
+    --load database
     objFiles <- getDirectoryContents "database/objects" 
     confFiles <- getDirectoryContents "database/configs"
     let objNames = onlyFiles "objects" objFiles
@@ -17,6 +18,7 @@ main = do
     confs <- sequence . map readFile $ confNames
     o <- initObjects (shortName <$> objNames) objs
     c <- initObjects (shortName <$> confNames) confs
+    --load images for menu
     start <- loadBMP "img/start.bmp"
     loadcfg <- loadBMP "img/loadcfg.bmp"
     loadobj <- loadBMP "img/loadobj.bmp"
@@ -30,6 +32,7 @@ main = do
     right <- loadBMP "img/right.bmp"
     selector1 <- loadBMP "img/selector1.bmp"
     selector2 <- loadBMP "img/selector2.bmp"
+    --ready to play
     run World { universe = defState
                   , state = Generator
                   , obj = (Objects o (length o))

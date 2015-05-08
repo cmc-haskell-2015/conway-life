@@ -16,12 +16,14 @@ type Location = [Coords]
 
 type Name = String
 
+type MenuItem = Int
+
 data World = World
                 { universe :: Universe
                 , state :: State
                 , obj :: Objects 
                 , cfg :: Configs
-                , selected :: Int
+                , selected :: MenuItem
                 , pic :: [Picture]    
                 , age :: Integer }
 
@@ -45,6 +47,7 @@ size = 25
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
 
+--Functions to convert object and config coords to universe
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
 loadObject u obj (Just c) = foldr (loadObjectAux c) u (coords obj)
 loadObject u _ Nothing = u
@@ -61,6 +64,7 @@ loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
                         defState (coords obj)
 
+--Functions to convert cell states
 halfToAlive :: Universe -> Universe
 halfToAlive u = fmap convert u
 
