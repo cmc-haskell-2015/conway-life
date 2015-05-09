@@ -49,16 +49,18 @@ defState = matrix size size ( \ _ -> Dead )
 
 --Functions to convert object and config coords to universe
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
-loadObject u obj (Just c) = foldr (loadObjectAux c) u (coords obj)
+loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
+                            where x = (maximum $ map fst (coords obj)) `div` 2
+                                  y = (maximum $ map snd (coords obj)) `div` 2
 loadObject u _ Nothing = u
 
-loadObjectAux :: Coords -> Coords -> Universe -> Universe
-loadObjectAux (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
-                                       (y <= size) && (y >= 1) 
-                                    then setElem Half (x, y) u
-                                    else u
-                                    where x = x1 + x2
-                                          y = y1 + y2
+loadObjectAux :: Coords -> Coords -> Coords -> Universe -> Universe
+loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
+                                                (y <= size) && (y >= 1) 
+                                             then setElem Half (x, y) u
+                                             else u
+                                             where x = x1 + x2 - x0
+                                                   y = y1 + y2 - y0
 
 loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
