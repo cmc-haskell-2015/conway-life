@@ -254,10 +254,9 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y))
       (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
         if n == (oNum o) then return $ world { state = ObjMenu 1 c }
                          else return $ world { state = ObjMenu (n + 1) c }
-    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) = return $ world {
+    | otherwise  = return $ world {
            universe = halfToAlive $ loadObject u ((oList o) !! (n - 1)) 
                                     (Just (i, j)) }
-    | otherwise = return world
     where offsetX = fromIntegral windowWidth / 2
           offsetY = fromIntegral windowHeight / 2
           w = 1.5 * (fromIntegral windowHeight)
@@ -272,9 +271,7 @@ handler (EventMotion (x, y)) world@(World _ (ObjMenu n c) _ _ _ _ _)
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
       (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
             return $ world { selected = 2 }
-    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) = return $ world {
-           state = ObjMenu n (Just (i, j)) }
-    | otherwise = return $ world { state = ObjMenu n Nothing }
+    | otherwise = return $ world { state = ObjMenu n (Just (i, j)) }
     where offsetX = fromIntegral windowWidth / 2
           offsetY = fromIntegral windowHeight / 2
           w = 1.5 * (fromIntegral windowHeight)
