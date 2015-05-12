@@ -305,6 +305,8 @@ handler (EventKey (SpecialKey KeyEnter) Down _ _)
     2 -> exitSuccess
 --ESC
 handler (EventKey (SpecialKey KeyEsc) Down _ _) world = exitSuccess
+--F2
+handler (EventKey (SpecialKey KeyF2) Down _ _) world = saveWorld world
 --default
 handler _ w = return w
 
