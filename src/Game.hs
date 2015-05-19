@@ -70,7 +70,9 @@ size = 25
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
 
--- | Functions to convert object and config coords to universe
+-- * Functions to convert object and config coords to universe
+
+-- | ???
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
 loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
                             where x = (maximum $ map fst (coords obj)) `div` 2
@@ -91,7 +93,9 @@ loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
                         defState (coords obj)
 
--- | Functions to convert cell states
+-- * Functions to convert cell states
+
+-- | ???
 halfToAlive :: Universe -> Universe
 halfToAlive u = fmap convert u
 

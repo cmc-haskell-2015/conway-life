@@ -349,7 +349,9 @@ drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $
                     Text $ "Iteration: " ++  (show age)]
                where h = fromIntegral windowHeight
 
--- | Drawing menu items
+-- * Drawing menu items
+
+-- | ???
 drawMenu1 :: Int -> [Picture] -> Picture
 drawMenu1 m pic = let j = case m of
                         1 -> h + 150
