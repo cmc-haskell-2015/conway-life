@@ -1,43 +1,66 @@
+-- | ???
 module Game where
 
 import Data.Matrix
 import Graphics.Gloss
 
-data Cell = Dead | Alive | Half deriving (Show)
+-- | ???
+data Cell
+  = Dead    -- ^ ???
+  | Alive   -- ^ ???
+  | Half    -- ^ ???
+  deriving (Show)
 
 -- | Coords - last mouse position
-data State = Generator | Iterator | CfgMenu Int | ObjMenu Int (Maybe Coords)
+data State
+  = Generator                   -- ^ ???
+  | Iterator                    -- ^ ???
+  | CfgMenu Int                 -- ^ ???
+  | ObjMenu Int (Maybe Coords)  -- ^ ???
 
-type Universe = (Matrix Cell)
+-- | ???
+type Universe = Matrix Cell
 
+-- | ???
 type Coords = (Int, Int)
 
+-- | ???
 type Location = [Coords]
 
+-- | ???
 type Name = String
 
+-- | ???
 type MenuItem = Int
 
+-- | ???
 data World = World
-                { universe :: Universe
-                , state :: State
-                , obj :: Objects 
-                , cfg :: Configs
-                , selected :: MenuItem
-                , pic :: [Picture]    
-                , age :: Integer }
+  { universe  :: Universe     -- ^ ???
+  , state     :: State        -- ^ ???
+  , obj       :: Objects      -- ^ ???
+  , cfg       :: Configs      -- ^ ???
+  , selected  :: MenuItem     -- ^ ???
+  , pic       :: [Picture]    -- ^ ???
+  , age       :: Integer      -- ^ ???
+  }
 
+-- | ???
 data Object = Object 
-                { name :: Name
-                , coords :: Location } deriving (Show)
+  { name    :: Name       -- ^ ???
+  , coords  :: Location   -- ^ ???
+  } deriving (Show)
 
+-- | ???
 data Objects = Objects 
-                 { oList :: [Object]
-                 , oNum :: Int }
+  { oList :: [Object]   -- ^ ???
+  , oNum  :: Int        -- ^ ???
+  }
 
+-- | ???
 data Configs = Configs
-                 { cList :: [Object]
-                 , cNum :: Int }
+  { cList :: [Object]   -- ^ ???
+  , cNum  :: Int        -- ^ ???
+  }
 
 -- | Constant field size
 size :: Int
@@ -54,6 +77,7 @@ loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
                                   y = (maximum $ map snd (coords obj)) `div` 2
 loadObject u _ Nothing = u
 
+-- | ???
 loadObjectAux :: Coords -> Coords -> Coords -> Universe -> Universe
 loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
                                                 (y <= size) && (y >= 1) 
@@ -62,6 +86,7 @@ loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
                                              where x = x1 + x2 - x0
                                                    y = y1 + y2 - y0
 
+-- | ???
 loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
                         defState (coords obj)
@@ -70,10 +95,12 @@ loadConfig obj = foldr ( \ coords u -> setElem Half coords u)
 halfToAlive :: Universe -> Universe
 halfToAlive u = fmap convert u
 
+-- | ???
 convert :: Cell -> Cell
 convert Half = Alive
 convert c = c
 
+-- | ???
 inverseCell :: Cell -> Cell
 inverseCell Dead = Alive
 inverseCell Alive = Dead
@@ -123,3 +150,4 @@ stepUniverseAux oldu newu (x, y) = stepUniverseAux
 -- | Universe updater
 stepUniverse :: Universe -> Universe
 stepUniverse u = stepUniverseAux u u (nrows u, ncols u)
+

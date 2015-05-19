@@ -1,3 +1,4 @@
+-- | ???
 module Files where
 
 import Data.Maybe
@@ -9,6 +10,7 @@ import Text.Read
 import Control.Applicative
 import Game
 
+-- | ???
 type Content = String
 
 -- | Remove ./ and ../ from dir contents and extend path of files
@@ -35,7 +37,6 @@ catchErrors ((n, Just []) : cdr) = do
     catchErrors cdr
 catchErrors ((n, Just c) : cdr) = (:) <$> (return (Object n c)) 
                                       <*> catchErrors cdr
-                                   
 
 -- | Read file content
 getCoords :: Content -> Maybe Location

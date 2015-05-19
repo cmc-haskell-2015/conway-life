@@ -1,3 +1,4 @@
+-- | ???
 module Graphics where
 
 import Data.Matrix
@@ -8,6 +9,7 @@ import Game
 import Files
 import System.Exit
 
+-- | ???
 cellSize :: Float
 cellSize = 24
 
@@ -23,9 +25,11 @@ run world = playIO (InWindow "Conway`s Life" windowSize (10, 10))
 windowSize :: (Int, Int)
 windowSize = ((round cellSize) * size * 2, (round cellSize) * size)
 
+-- | ???
 windowWidth :: Int
 windowWidth = fst windowSize
 
+-- | ???
 windowHeight :: Int
 windowHeight = snd windowSize
 
@@ -372,6 +376,7 @@ drawMenu1 m pic = let j = case m of
                    where w = 1.5 * (fromIntegral windowHeight)
                          h = (fromIntegral windowHeight) / 2
 
+-- | ???
 drawMenu2 :: Int -> [Picture] -> Picture
 drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
                       i = 50
@@ -382,6 +387,7 @@ drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
                   where w = 1.5 * (fromIntegral windowHeight)
                         h = (fromIntegral windowHeight) / 2
 
+-- | ???
 drawMenu3 :: Int -> [Picture] -> Int -> Configs -> Picture
 drawMenu3 m pic n c = let j = case m of
                                 1 -> h - 60
@@ -403,6 +409,7 @@ drawMenu3 m pic n c = let j = case m of
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 
+-- | ???
 drawMenu4 :: Int -> [Picture] -> Int -> Objects -> Picture
 drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
                           i = 50
@@ -430,3 +437,4 @@ drawCell x y cell = let figure = case cell of
                                  (cellSize / 2 + cellSize * y)
                                  figure
                     where c = cellSize
+
