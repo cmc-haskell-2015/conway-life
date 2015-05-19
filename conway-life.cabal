@@ -16,6 +16,19 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
+library
+  exposed-modules:
+    Files
+    Graphics
+    Game
+  build-depends:       base >=4.6 && <4.8 
+                       , matrix
+                       , gloss
+                       , directory
+                       , time
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+
 executable conway-life
   main-is:             Main.hs
   other-modules:       Files, Graphics, Game
