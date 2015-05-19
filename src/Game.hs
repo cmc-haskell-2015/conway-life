@@ -5,7 +5,7 @@ import Graphics.Gloss
 
 data Cell = Dead | Alive | Half deriving (Show)
 
---Coords - last mouse position
+-- | Coords - last mouse position
 data State = Generator | Iterator | CfgMenu Int | ObjMenu Int (Maybe Coords)
 
 type Universe = (Matrix Cell)
@@ -39,15 +39,15 @@ data Configs = Configs
                  { cList :: [Object]
                  , cNum :: Int }
 
---Constant field size
+-- | Constant field size
 size :: Int
 size = 25
 
---Default state
+-- | Default state
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
 
---Functions to convert object and config coords to universe
+-- | Functions to convert object and config coords to universe
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
 loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
                             where x = (maximum $ map fst (coords obj)) `div` 2
@@ -66,7 +66,7 @@ loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
                         defState (coords obj)
 
---Functions to convert cell states
+-- | Functions to convert cell states
 halfToAlive :: Universe -> Universe
 halfToAlive u = fmap convert u
 
@@ -78,12 +78,12 @@ inverseCell :: Cell -> Cell
 inverseCell Dead = Alive
 inverseCell Alive = Dead
 
---Check if the cell is alive
+-- | Check if the cell is alive
 isAlive :: Cell -> Bool
 isAlive Alive = True
 isAlive Dead = False
 
---Get Moore neighbourhood of a cell as a list of neighbouring cells
+-- | Get Moore neighbourhood of a cell as a list of neighbouring cells
 getNeighbours :: Universe -> Coords -> [Cell]
 getNeighbours u (x, y) = [u ! (i, j) | i <- [x - 1 .. x + 1], 
                                     j <- [y - 1 .. y + 1],
@@ -91,7 +91,7 @@ getNeighbours u (x, y) = [u ! (i, j) | i <- [x - 1 .. x + 1],
                                     j >= 1, j <= (ncols u),
                                     i /= x || j /= y]
 
---Updates the cell according to the number of its neighbours
+-- | Updates the cell according to the number of its neighbours
 stepCellAux :: Cell -> [Cell] -> Cell
 stepCellAux cell neighbours = let live = length (filter isAlive neighbours) in 
                                 case cell of
@@ -104,11 +104,11 @@ stepCellAux cell neighbours = let live = length (filter isAlive neighbours) in
                                              else 
                                                 Dead
 
---Update function for cell
+-- | Update function for cell
 stepCell :: Universe -> Coords -> Cell
 stepCell u (x, y) = stepCellAux (u ! (x, y)) (getNeighbours u (x, y))
 
---Auxillary function to update the universe cell by cell
+-- | Auxillary function to update the universe cell by cell
 stepUniverseAux :: Universe -> Universe -> Coords -> Universe
 stepUniverseAux oldu newu (1, 1) = setElem (stepCell oldu (1, 1)) (1, 1) newu
 stepUniverseAux oldu newu (x, 1) = stepUniverseAux 
@@ -120,6 +120,6 @@ stepUniverseAux oldu newu (x, y) = stepUniverseAux
                                    (setElem (stepCell oldu (x, y)) (x, y) newu)
                                    (x, (y - 1))
 
---Universe updater
+-- | Universe updater
 stepUniverse :: Universe -> Universe
 stepUniverse u = stepUniverseAux u u (nrows u, ncols u)

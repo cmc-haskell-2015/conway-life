@@ -11,7 +11,7 @@ import System.Exit
 cellSize :: Float
 cellSize = 24
 
---Main function for drawing universe
+-- | Main function for drawing universe
 run :: World -> IO ()
 run world = playIO (InWindow "Conway`s Life" windowSize (10, 10)) 
                        white 2 world 
@@ -19,7 +19,7 @@ run world = playIO (InWindow "Conway`s Life" windowSize (10, 10))
                        handler 
                        (\x y -> return $ updater x y)
 
---Calculate window size for current universe size
+-- | Calculate window size for current universe size
 windowSize :: (Int, Int)
 windowSize = ((round cellSize) * size * 2, (round cellSize) * size)
 
@@ -29,13 +29,13 @@ windowWidth = fst windowSize
 windowHeight :: Int
 windowHeight = snd windowSize
 
---Update the universe on each step
+-- | Update the universe on each step
 updater :: Float -> World -> World
 updater _ world@(World u Iterator _ _ _ _ a) = world { universe = stepUniverse u
                                                      , age = a + 1 }
 updater _ w = w
 
---Handle events from mouse and keyboard
+-- | Handle events from mouse and keyboard
 handler :: Event -> World -> IO World
 --Generator events
 --LMB
@@ -310,7 +310,7 @@ handler (EventKey (SpecialKey KeyF2) Down _ _) world = saveWorld world
 --default
 handler _ w = return w
 
---Render a picture
+-- | Render a picture
 renderer :: World -> Picture
 renderer (World u s o c m p a) = let offsetX = - fromIntegral windowWidth / 2
                                      offsetY = - fromIntegral windowHeight / 2
@@ -330,14 +330,14 @@ renderer (World u s o c m p a) = let offsetX = - fromIntegral windowWidth / 2
                                      pictures [(drawUniverse uni), 
                                                (drawMenu a), menu]
 
---Create a picture as a list (superposition) of cells 
+-- | Create a picture as a list (superposition) of cells 
 drawUniverse :: Universe -> Picture
 drawUniverse u = pictures [drawCell 
                  (fromIntegral (x - 1)) (fromIntegral (y - 1)) 
                  (u ! (x, y)) 
                  | x <- [1 .. size], y <- [1 .. size]]
 
---Drawing menu background
+-- | Drawing menu background
 drawMenu :: Integer -> Picture
 drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $ 
                     rectangleSolid h h, rectangleWire h h,
@@ -345,7 +345,7 @@ drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $
                     Text $ "Iteration: " ++  (show age)]
                where h = fromIntegral windowHeight
 
---Drawing menu items
+-- | Drawing menu items
 drawMenu1 :: Int -> [Picture] -> Picture
 drawMenu1 m pic = let j = case m of
                         1 -> h + 150
@@ -420,7 +420,7 @@ drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 
---Create picture of dead (empty rectangle) or alive (solid rectangle) cell
+-- | Create picture of dead (empty rectangle) or alive (solid rectangle) cell
 drawCell :: Float -> Float -> Cell -> Picture
 drawCell x y cell = let figure = case cell of
                                  Dead -> rectangleWire c c
