@@ -6,7 +6,7 @@
 
 ![Screenshot](img/screenshot.png)
 
-## Установка
+## Установка и запуск
 
 Для установки клонируйте репозиторий и запустите `cabal install`:
 
@@ -14,6 +14,19 @@
 $ git clone https://github.com/cmc-haskell-2015/conway-life.git
 $ cd conway-life
 $ cabal install
+```
+
+После установки запуск осуществляется командой `conway-life`:
+
+```
+$ conway-life
+```
+
+Для сборки и запуска текущей версии непосредственно из репозитория используйте `cabal run`:
+
+```
+$ cd conway-life
+$ cabal run
 ```
 
 ## Интерфейс
