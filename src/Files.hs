@@ -27,20 +27,22 @@ shortName s = iterate (tail . dropWhile (/= '/')) s !! 2
 
 -- | Get objects from database.
 initObjects :: [Name] -> [Content] -> IO [Object]
-initObjects n c = catchErrors $ zip n (getCoords <$> c)
+initObjects n c = objList $ zip n (getCoords <$> c)
 
--- | Find configs with errors, remove them from list 
+-- | Create list of objects out of proper configurations.
+objList :: [(Name, Maybe Location)] -> IO [Object]
+objList = foldr catchErrors (return [])
+    
+-- | Find configs with errors, exclude them from objects list
 -- and write messages about it.
-catchErrors :: [(Name, Maybe Location)] -> IO [Object]
-catchErrors [] = return []
-catchErrors ((n, Nothing) : cdr) = do 
+catchErrors :: (Name, Maybe Location) -> IO [Object] -> IO [Object]
+catchErrors (n, Nothing) acc = do 
     putStrLn $ "Error reading database: file '" ++ n ++ "' wasn't loaded"
-    catchErrors cdr
-catchErrors ((n, Just []) : cdr) = do 
+    acc
+catchErrors (n, Just []) acc = do 
     putStrLn $ "Error reading database: file '" ++ n ++ "' wasn't loaded"
-    catchErrors cdr
-catchErrors ((n, Just c) : cdr) = (:) <$> (return (Object n c)) 
-                                      <*> catchErrors cdr
+    acc
+catchErrors (n, Just c) acc = (:) <$> (return (Object n c)) <*> acc
 
 -- | Read file content.
 getCoords :: Content -> Maybe Location
@@ -66,9 +68,9 @@ checkInts _ _ = Nothing
 
 -- | Save current universe as configuration.
 saveWorld :: World -> IO World
-saveWorld wor = do
-    saveUni (universe wor)
-    return wor
+saveWorld world = do
+    saveUni (universe world)
+    return world
 
 -- | Create new file with unique name and save configuration.
 saveUni :: Universe -> IO ()
