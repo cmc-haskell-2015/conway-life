@@ -172,7 +172,7 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y))
     | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
       (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
             return $ world { universe = halfToAlive $ loadConfig $ 
-                                        (cList c) !! (n - 1)
+                                        (list c) !! (n - 1)
                            , state = Generator }
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
       (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
@@ -183,11 +183,11 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y))
             exitSuccess
     | (x + offsetX >= w - 200 - 16) && (x + offsetX <= w - 200 + 16) &&
       (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == 1 then return $ world { state = CfgMenu (cNum c) }
+        if n == 1 then return $ world { state = CfgMenu (num c) }
                   else return $ world { state = CfgMenu (n - 1) }
     | (x + offsetX >= w + 200 - 16) && (x + offsetX <= w + 200 + 16) &&
       (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == (cNum c) then return $ world { state = CfgMenu 1 }
+        if n == (num c) then return $ world { state = CfgMenu 1 }
                          else return $ world { state = CfgMenu (n + 1) }
     | otherwise = return $ world
     where offsetX = fromIntegral windowWidth / 2
@@ -223,18 +223,18 @@ handler (EventKey (SpecialKey KeyUp) Down _ _)
 --Key right
 handler (EventKey (SpecialKey KeyRight) Down _ _) 
     world@(World _ (CfgMenu n) _ c _ _ _)
-    | n == (cNum c) = return $ world { state = CfgMenu 1 }
+    | n == (num c) = return $ world { state = CfgMenu 1 }
     | otherwise = return $ world { state = CfgMenu (n + 1) }
 --Key left
 handler (EventKey (SpecialKey KeyLeft) Down _ _) 
     world@(World _ (CfgMenu n) _ c _ _ _)
-    | n == 1 = return $ world { state = CfgMenu (cNum c) }
+    | n == 1 = return $ world { state = CfgMenu (num c) }
     | otherwise = return $ world { state = CfgMenu (n - 1) }
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
     world@(World u (CfgMenu n) o c m p a) = case m of
     1 -> return $ world { universe = halfToAlive $ loadConfig $ 
-                                        (cList c) !! (n - 1)
+                                        (list c) !! (n - 1)
                         , state = Generator }
     2 -> return $ World u Generator o c 1 p a
     3 -> exitSuccess
@@ -252,14 +252,14 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y))
             exitSuccess
     | (x + offsetX >= w - 120 - 16) && (x + offsetX <= w - 120 + 16) &&
       (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == 1 then return $ world { state = ObjMenu (oNum o) c }
+        if n == 1 then return $ world { state = ObjMenu (num o) c }
                   else return $ world { state = ObjMenu (n - 1) c }
     | (x + offsetX >= w + 120 - 16) && (x + offsetX <= w + 120 + 16) &&
       (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == (oNum o) then return $ world { state = ObjMenu 1 c }
+        if n == (num o) then return $ world { state = ObjMenu 1 c }
                          else return $ world { state = ObjMenu (n + 1) c }
     | otherwise  = return $ world {
-           universe = halfToAlive $ loadObject u ((oList o) !! (n - 1)) 
+           universe = halfToAlive $ loadObject u ((list o) !! (n - 1)) 
                                     (Just (i, j)) }
     where offsetX = fromIntegral windowWidth / 2
           offsetY = fromIntegral windowHeight / 2
@@ -295,12 +295,12 @@ handler (EventKey (SpecialKey KeyUp) Down _ _)
 --Key right
 handler (EventKey (SpecialKey KeyRight) Down _ _) 
     world@(World _ (ObjMenu n c) o _ _ _ _)
-    | n == (oNum o) = return $ world { state = ObjMenu 1 c }
+    | n == (num o) = return $ world { state = ObjMenu 1 c }
     | otherwise = return $ world { state = ObjMenu (n + 1) c }
 --Key left
 handler (EventKey (SpecialKey KeyLeft) Down _ _) 
     world@(World _ (ObjMenu n c) o _ _ _ _)
-    | n == 1 = return $ world { state = ObjMenu (oNum o) c }
+    | n == 1 = return $ world { state = ObjMenu (num o) c }
     | otherwise = return $ world { state = ObjMenu (n - 1) c }
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
@@ -327,9 +327,9 @@ renderer (World u s o c m p a) = let offsetX = - fromIntegral windowWidth / 2
                                         Generator -> u
                                         Iterator -> u
                                         CfgMenu n -> loadConfig $ 
-                                            (cList c) !! (n - 1)
+                                            (list c) !! (n - 1)
                                         ObjMenu n coords -> loadObject u 
-                                            ((oList o) !! (n - 1)) coords
+                                            ((list o) !! (n - 1)) coords
                                   in translate offsetX offsetY $
                                      pictures [(drawUniverse uni), 
                                                (drawMenu a), menu]
@@ -405,9 +405,9 @@ drawMenu3 m pic n c = let j = case m of
                                    translate (w + 30 + i) j $ pic !! 12,
                                    translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
                                     Text $ "Config " ++ show n ++ "/" ++ 
-                                                        show (cNum c),
+                                                        show (num c),
                                    translate (w - 80) h $ Scale 0.1 0.1 $
-                                    Text $ name $ (cList c) !! (n - 1)]
+                                    Text $ name $ (list c) !! (n - 1)]
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 
@@ -423,9 +423,9 @@ drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
                                    translate (w + 30 + i) j $ pic !! 12,
                                    translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
                                     Text $ "Object " ++ show n ++ "/" ++ 
-                                                        show (oNum o),
+                                                        show (num o),
                                    translate (w - 40) h $ Scale 0.2 0.2 $
-                                    Text $ name $ (oList o) !! (n - 1)]
+                                    Text $ name $ (list o) !! (n - 1)]
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 

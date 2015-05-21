@@ -36,7 +36,7 @@ main = do
     run World { universe = defState
                   , state = Generator
                   , obj = (Objects ((Object "-" []) : o) ((length o) + 1))
-                  , cfg =  (Configs ((Object "-" []) : c) ((length c) + 1))
+                  , cfg =  (Objects ((Object "-" []) : c) ((length c) + 1))
                   , selected = 1
                   , pic = [start, loadcfg, loadobj, clear, save, exit, 
                         select, back, stop, left, right, selector1, selector2]
