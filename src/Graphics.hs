@@ -19,6 +19,16 @@ isClick :: MyMouseEvent -> Bool
 isClick Click = True
 isClick Move = False
 
+-- | Getter for picture width
+getWidth :: Picture -> Float
+getWidth (Bitmap w _ _ _) = fromIntegral w
+getWidth _ = 0
+
+-- | Getter for picture height
+getHeight :: Picture -> Float
+getHeight (Bitmap _ h _ _) = fromIntegral h
+getHeight _ = 0
+
 -- | Cell size
 cellSize :: Float
 cellSize = 24
@@ -324,12 +334,12 @@ drawMenu1 m pic = let j = case m of
                         5 -> h - 90
                         6 -> h - 150
                       i = case m of
-                        1 -> 65
-                        2 -> 125
-                        3 -> 125
-                        4 -> 60
-                        5 -> 50
-                        6 -> 50
+                        1 -> getWidth (pic !! 0) / 2
+                        2 -> getWidth (pic !! 1) / 2
+                        3 -> getWidth (pic !! 2) / 2
+                        4 -> getWidth (pic !! 3) / 2
+                        5 -> getWidth (pic !! 4) / 2
+                        6 -> getWidth (pic !! 5) / 2
                   in pictures [translate w (h + 150) $ pic !! 0,
                                translate w (h + 90) $ pic !! 1,
                                translate w (h + 30) $ pic !! 2,
@@ -344,7 +354,7 @@ drawMenu1 m pic = let j = case m of
 -- | for iterator state
 drawMenu2 :: Int -> [Picture] -> Picture
 drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
-                      i = 50
+                      i = getWidth (pic !! 8) / 2
                   in pictures [translate w (h + 30) $ pic !! 8,
                                translate w (h - 30) $ pic !! 5,
                                translate (w - 30 - i) j $ pic !! 11,
@@ -358,7 +368,8 @@ drawMenu3 m pic n c = let j = case m of
                                 1 -> h - 60
                                 2 -> h - 120
                                 3 -> h - 180
-                          i = if m == 1 then 65 else 50
+                          i = if m == 1 then getWidth (pic !! 6) / 2
+                                        else getWidth (pic !! 7) / 2
                       in pictures [translate w (h - 60) $ pic !! 6,
                                    translate w (h - 120) $ pic !! 7,
                                    translate w (h - 180) $ pic !! 5,
@@ -377,7 +388,7 @@ drawMenu3 m pic n c = let j = case m of
 -- | for ObjMenu state
 drawMenu4 :: Int -> [Picture] -> Int -> Objects -> Picture
 drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
-                          i = 50
+                          i = getWidth (pic !! 7) / 2
                       in pictures [translate w (h - 60) $ pic !! 7,
                                    translate w (h - 120) $ pic !! 5,
                                    translate (w - 120) (h + 10) $ pic !! 9,
