@@ -1,4 +1,4 @@
--- | ???
+-- | Graphics interface of the programm
 module Graphics where
 
 import Data.Matrix
@@ -9,7 +9,17 @@ import Game
 import Files
 import System.Exit
 
--- | ???
+-- | Used in handling mouse events
+data MyMouseEvent
+    = Move -- ^ when mouse moves
+    | Click -- ^ when pressing left mouse button
+
+-- | 'Convert' MyMouseEvent to Bool
+isClick :: MyMouseEvent -> Bool
+isClick Click = True
+isClick Move = False
+
+-- | Cell size
 cellSize :: Float
 cellSize = 24
 
@@ -25,11 +35,11 @@ run world = playIO (InWindow "Conway`s Life" windowSize (10, 10))
 windowSize :: (Int, Int)
 windowSize = ((round cellSize) * size * 2, (round cellSize) * size)
 
--- | ???
+-- | Window width
 windowWidth :: Int
 windowWidth = fst windowSize
 
--- | ???
+-- | Window height
 windowHeight :: Int
 windowHeight = snd windowSize
 
@@ -39,77 +49,177 @@ updater _ world@(World u Iterator _ _ _ _ a) = world { universe = stepUniverse u
                                                      , age = a + 1 }
 updater _ w = w
 
--- | Handle events from mouse and keyboard
-handler :: Event -> World -> IO World
---Generator events
---LMB
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
-    world@(World u Generator _ _ _ _ _)
+-- | Handle mouse events in main menu (Generator state)
+generatorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
+generatorMouse e x y world
     | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
       (y + offsetY >= h + 150 - 30) && (y + offsetY <= h + 150 + 30) =  
-            return $ world { state = Iterator
-                           , selected = 1 }
+            case e of
+                Click -> return world { state = Iterator, selected = 1 }
+                Move -> return world { selected = 1 }
     | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
       (y + offsetY >= h + 90 - 30) && (y + offsetY <= h + 90 + 30) =  
-            return $ world { state = CfgMenu 1
-                           , selected = 1 }
+            case e of
+                Click -> return world { state = CfgMenu 1, selected = 1 }
+                Move -> return world { selected = 2 }
     | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
       (y + offsetY >= h + 30 - 30) && (y + offsetY <= h + 30 + 30) =  
-            return $ world { state = ObjMenu 1 Nothing
-                           , selected = 1 }
+            case e of
+                Click -> return world { state = ObjMenu 1 Nothing, selected = 1}
+                Move -> return world { selected = 3 }
     | (x + offsetX >= w - 60) && (x + offsetX <= w + 60) &&
       (y + offsetY >= h - 30 - 30) && (y + offsetY <= h - 30 + 30) =  
-            return $ world { universe = defState } 
+            case e of
+                Click -> return world { universe = defState } 
+                Move -> return world { selected = 4 }
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
       (y + offsetY >= h - 90 - 30) && (y + offsetY <= h - 90 + 30) =  
-            saveWorld world
+            case e of
+                Click -> saveWorld world
+                Move -> return world { selected = 5 }
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
       (y + offsetY >= h - 150 - 30) && (y + offsetY <= h - 150 + 30) =  
-            exitSuccess
-    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) = return $ world {
-           universe = (setElem (inverseCell $ u ! (i, j)) (i, j) u) }
-    | otherwise = return $ world
+            case e of
+                Click -> exitSuccess
+                Move -> return world { selected = 6 }
+    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) && (isClick e) = let 
+            u = universe world in return world { universe = 
+                    (setElem (inverseCell $ u ! (i, j)) (i, j) u) }
+    | otherwise = return world
     where offsetX = fromIntegral windowWidth / 2
           offsetY = fromIntegral windowHeight / 2
           w = 1.5 * (fromIntegral windowHeight)
           h = (fromIntegral windowHeight) / 2
           i = round ((x + offsetX + cellSize / 2) / cellSize)
           j = round ((y + offsetY + cellSize / 2) / cellSize)
---Mouse move
-handler (EventMotion (x, y)) world@(World _ Generator _ _ _ _ _)
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h + 150 - 30) && (y + offsetY <= h + 150 + 30) =  
-            return $ world { selected = 1 }
-    | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
-      (y + offsetY >= h + 90 - 30) && (y + offsetY <= h + 90 + 30) =  
-            return $ world { selected = 2 }
-    | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
-      (y + offsetY >= h + 30 - 30) && (y + offsetY <= h + 30 + 30) =  
-            return $ world { selected = 3 }
-    | (x + offsetX >= w - 60) && (x + offsetX <= w + 60) &&
-      (y + offsetY >= h - 30 - 30) && (y + offsetY <= h - 30 + 30) =  
-            return $ world { selected = 4 }
+
+-- | Handle mouse events during simulation (Iterator state)
+iteratorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
+iteratorMouse e x y world
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 90 - 30) && (y + offsetY <= h - 90 + 30) =  
-            return $ world { selected = 5 }
+      (y + offsetY >= h) && (y + offsetY <= h + 60) =  
+            case e of
+                Click -> return world { state = Generator, selected = 1 }
+                Move -> return world { selected = 1 }
     | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150 - 30) && (y + offsetY <= h - 150 + 30) =  
-            return $ world { selected = 6 }
-    | otherwise = return $ world
+      (y + offsetY >= h - 60) && (y + offsetY <= h) =  
+            case e of
+                Click -> exitSuccess
+                Move -> return world { selected = 2 }
+    | otherwise = return world
     where offsetX = fromIntegral windowWidth / 2
           offsetY = fromIntegral windowHeight / 2
           w = 1.5 * (fromIntegral windowHeight)
           h = (fromIntegral windowHeight) / 2
---Key down for menu navigation
-handler (EventKey (SpecialKey KeyDown) Down _ _) 
-    world@(World _ Generator _ _ m _ _)
-    | m == 6 = return $ world { selected = 1 }
-    | otherwise = return $ world { selected = m + 1 }
---Key up for menu navigation
-handler (EventKey (SpecialKey KeyUp) Down _ _)
-    world@(World _ Generator _ _ m _ _)
-    | m == 1 = return $ world { selected = 6 }
-    | otherwise = return $ world { selected = m - 1 }
+
+-- | Handle mouse events in menu for loading configs (CfgMenu state)
+cfgMenuMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
+cfgMenuMouse e x y world
+    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
+      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
+            case e of
+                Click -> return world { universe = halfToAlive $ loadConfig $ 
+                                        (list c) !! (n - 1), state = Generator }
+                Move -> return world { selected = 1 }
+    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
+      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
+            case e of
+                Click -> return world { state = Generator, selected = 1 }
+                Move -> return world { selected = 2 }
+    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
+      (y + offsetY >= h - 210) && (y + offsetY <= h - 150) =  
+            case e of
+                Click -> exitSuccess
+                Move -> return world { selected = 3 }
+    | (x + offsetX >= w - 200 - 16) && (x + offsetX <= w - 200 + 16) &&
+      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) && 
+      (isClick e) = if n == 1 then return world { state = CfgMenu (num c) }
+                              else return world { state = CfgMenu (n - 1) }
+    | (x + offsetX >= w + 200 - 16) && (x + offsetX <= w + 200 + 16) &&
+      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
+      (isClick e) = if n == (num c) then return world { state = CfgMenu 1 }
+                                    else return world { state = CfgMenu (n + 1)}
+    | otherwise = return world
+    where offsetX = fromIntegral windowWidth / 2
+          offsetY = fromIntegral windowHeight / 2
+          w = 1.5 * (fromIntegral windowHeight)
+          h = (fromIntegral windowHeight) / 2
+          c = cfg world
+          n = cnum $ state world
+
+-- | Handle mouse events in menu for loading objects (ObjMenu state)
+objMenuMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
+objMenuMouse e x y world
+    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
+      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
+            case e of
+                Click -> return world { state = Generator, selected = 1 }
+                Move -> return world { selected = 1 }
+    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
+      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
+            case e of
+                Click -> exitSuccess
+                Move -> return world { selected = 2 }
+    | (x + offsetX >= w - 120 - 16) && (x + offsetX <= w - 120 + 16) &&
+      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
+      (isClick e) = if n == 1 then return world { state = ObjMenu (num o) c }
+                              else return world { state = ObjMenu (n - 1) c }
+    | (x + offsetX >= w + 120 - 16) && (x + offsetX <= w + 120 + 16) &&
+      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
+      (isClick e) = if n == (num o) then return world { state = ObjMenu 1 c }
+                                else return world { state = ObjMenu (n + 1) c }
+    | (isClick e) = return world { universe = halfToAlive $ 
+            loadObject (universe world) ((list o) !! (n - 1)) (Just (i, j)) }
+    | otherwise = return world { state = ObjMenu n (Just (i, j)) }
+    where offsetX = fromIntegral windowWidth / 2
+          offsetY = fromIntegral windowHeight / 2
+          w = 1.5 * (fromIntegral windowHeight)
+          h = (fromIntegral windowHeight) / 2
+          i = round ((x + offsetX + cellSize / 2) / cellSize)
+          j = round ((y + offsetY + cellSize / 2) / cellSize)
+          o = obj world
+          n = onum $ state world
+          c = crd $ state world
+
+-- | Function for menu navigation by the up & down keys
+-- Int parameter is step and should be 1 or -1
+keyMenuNavigation :: World -> Int -> World
+keyMenuNavigation world step
+    | m + step < 1 = world { selected = n }
+    | m + step > n = world { selected = 1 }
+    | otherwise = world { selected = m + step }
+    where m = selected world
+          n = case (state world) of
+                Generator -> 6
+                Iterator -> 2
+                CfgMenu _ -> 3
+                ObjMenu _ _ -> 2
+
+-- | Handle events from mouse and keyboard
+handler :: Event -> World -> IO World
+-- Mouse Events
+-- Click
+handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
+    world@(World _ s _ _ _ _ _) = case s of
+        Generator -> generatorMouse Click x y world
+        Iterator -> iteratorMouse Click x y world
+        CfgMenu _ -> cfgMenuMouse Click x y world
+        ObjMenu _ _ -> objMenuMouse Click x y world
+-- Move
+handler (EventMotion (x, y)) 
+    world@(World _ s _ _ _ _ _) = case s of
+        Generator -> generatorMouse Move x y world
+        Iterator -> iteratorMouse Move x y world
+        CfgMenu _ -> cfgMenuMouse Move x y world
+        ObjMenu _ _ -> objMenuMouse Move x y world
+-- Keyboard Events
+-- Key down for menu navigation
+handler (EventKey (SpecialKey KeyDown) Down _ _) world = 
+    return $ keyMenuNavigation world 1
+-- Key up for menu navigation
+handler (EventKey (SpecialKey KeyUp) Down _ _) world = 
+    return $ keyMenuNavigation world (-1)
+-- Generator events
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
     world@(World u Generator o c m p a) = case m of
@@ -120,106 +230,12 @@ handler (EventKey (SpecialKey KeyEnter) Down _ _)
     5 -> saveWorld world
     6 -> exitSuccess
 --Iterator Events
---INSANE!
---LMB
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
-    world@(World u Iterator _ _ _ _ _)
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h) && (y + offsetY <= h + 60) =  
-            return $ world { state = Generator
-                           , selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 60) && (y + offsetY <= h) =  
-            exitSuccess
-    | otherwise = return $ world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
---Mouse move
-handler (EventMotion (x, y)) world@(World _ Iterator _ _ _ _ _)
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h) && (y + offsetY <= h + 60) =  
-            return $ world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 60) && (y + offsetY <= h) =  
-            return $ world { selected = 2 }
-    | otherwise = return $ world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
---Key down for menu navigation
-handler (EventKey (SpecialKey KeyDown) Down _ _) 
-    world@(World _ Iterator _ _ m _ _)
-    | m == 2 = return $ world { selected = 1 }
-    | otherwise = return $ world { selected = m + 1 }
---Key up for menu navigation
-handler (EventKey (SpecialKey KeyUp) Down _ _)
-    world@(World _ Iterator _ _ m _ _)
-    | m == 1 = return $ world { selected = 2 }
-    | otherwise = return $ world { selected = m - 1 }
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
     world@(World u Iterator o c m p a) = case m of
     1 -> return $ World u Generator o c 1 p a
     2 -> exitSuccess
 --CfgMenu Events
---INSANE!!
---LMB
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
-    world@(World u (CfgMenu n)  _ c _ _ _)
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            return $ world { universe = halfToAlive $ loadConfig $ 
-                                        (list c) !! (n - 1)
-                           , state = Generator }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            return $ world { state = Generator
-                           , selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 210) && (y + offsetY <= h - 150) =  
-            exitSuccess
-    | (x + offsetX >= w - 200 - 16) && (x + offsetX <= w - 200 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == 1 then return $ world { state = CfgMenu (num c) }
-                  else return $ world { state = CfgMenu (n - 1) }
-    | (x + offsetX >= w + 200 - 16) && (x + offsetX <= w + 200 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == (num c) then return $ world { state = CfgMenu 1 }
-                         else return $ world { state = CfgMenu (n + 1) }
-    | otherwise = return $ world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
---Mouse move
-handler (EventMotion (x, y)) world@(World _ (CfgMenu n) _ _ _ _ _)
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            return $ world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            return $ world { selected = 2 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 210) && (y + offsetY <= h - 150) =  
-            return $ world { selected = 3 }
-    | otherwise = return $ world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
---Key down for menu navigation
-handler (EventKey (SpecialKey KeyDown) Down _ _) 
-    world@(World _ (CfgMenu n) _ _ m _ _)
-    | m == 3 = return $ world { selected = 1 }
-    | otherwise = return $ world { selected = m + 1 }
---Key up for menu navigation
-handler (EventKey (SpecialKey KeyUp) Down _ _)
-    world@(World _ (CfgMenu n) _ _ m _ _)
-    | m == 1 = return $ world { selected = 3 }
-    | otherwise = return $ world { selected = m - 1 }
 --Key right
 handler (EventKey (SpecialKey KeyRight) Down _ _) 
     world@(World _ (CfgMenu n) _ c _ _ _)
@@ -239,59 +255,6 @@ handler (EventKey (SpecialKey KeyEnter) Down _ _)
     2 -> return $ World u Generator o c 1 p a
     3 -> exitSuccess
 --ObjMenu Events
---IM BECOMING INSANE!!!
---LMB
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
-    world@(World u (ObjMenu n c) o _ _ _ _)
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            return $ world { state = Generator
-                           , selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            exitSuccess
-    | (x + offsetX >= w - 120 - 16) && (x + offsetX <= w - 120 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == 1 then return $ world { state = ObjMenu (num o) c }
-                  else return $ world { state = ObjMenu (n - 1) c }
-    | (x + offsetX >= w + 120 - 16) && (x + offsetX <= w + 120 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) =
-        if n == (num o) then return $ world { state = ObjMenu 1 c }
-                         else return $ world { state = ObjMenu (n + 1) c }
-    | otherwise  = return $ world {
-           universe = halfToAlive $ loadObject u ((list o) !! (n - 1)) 
-                                    (Just (i, j)) }
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
-          i = round ((x + offsetX + cellSize / 2) / cellSize)
-          j = round ((y + offsetY + cellSize / 2) / cellSize)
---Mouse move
-handler (EventMotion (x, y)) world@(World _ (ObjMenu n c) _ _ _ _ _)
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            return $ world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            return $ world { selected = 2 }
-    | otherwise = return $ world { state = ObjMenu n (Just (i, j)) }
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
-          i = round ((x + offsetX + cellSize / 2) / cellSize)
-          j = round ((y + offsetY + cellSize / 2) / cellSize)
---Key down for menu navigation
-handler (EventKey (SpecialKey KeyDown) Down _ _) 
-    world@(World _ (ObjMenu n c) _ _ m _ _)
-    | m == 2 = return $ world { selected = 1 }
-    | otherwise = return $ world { selected = m + 1 }
---Key up for menu navigation
-handler (EventKey (SpecialKey KeyUp) Down _ _)
-    world@(World _ (ObjMenu n c) _ _ m _ _)
-    | m == 1 = return $ world { selected = 2 }
-    | otherwise = return $ world { selected = m - 1 }
 --Key right
 handler (EventKey (SpecialKey KeyRight) Down _ _) 
     world@(World _ (ObjMenu n c) o _ _ _ _)
@@ -351,7 +314,7 @@ drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $
 
 -- * Drawing menu items
 
--- | ???
+-- | for generator state
 drawMenu1 :: Int -> [Picture] -> Picture
 drawMenu1 m pic = let j = case m of
                         1 -> h + 150
@@ -378,7 +341,7 @@ drawMenu1 m pic = let j = case m of
                    where w = 1.5 * (fromIntegral windowHeight)
                          h = (fromIntegral windowHeight) / 2
 
--- | ???
+-- | for iterator state
 drawMenu2 :: Int -> [Picture] -> Picture
 drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
                       i = 50
@@ -389,7 +352,7 @@ drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
                   where w = 1.5 * (fromIntegral windowHeight)
                         h = (fromIntegral windowHeight) / 2
 
--- | ???
+-- | for CfgMenu state
 drawMenu3 :: Int -> [Picture] -> Int -> Configs -> Picture
 drawMenu3 m pic n c = let j = case m of
                                 1 -> h - 60
@@ -411,7 +374,7 @@ drawMenu3 m pic n c = let j = case m of
                       where w = 1.5 * (fromIntegral windowHeight)
                             h = (fromIntegral windowHeight) / 2
 
--- | ???
+-- | for ObjMenu state
 drawMenu4 :: Int -> [Picture] -> Int -> Objects -> Picture
 drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
                           i = 50

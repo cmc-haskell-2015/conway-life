@@ -13,12 +13,14 @@ data Cell
             -- in for GUI.
   deriving (Show)
 
--- | ???
+-- | Available states of the world
 data State
-  = Generator                   -- ^ ???
-  | Iterator                    -- ^ ???
-  | CfgMenu Int                 -- ^ ???
-  | ObjMenu Int (Maybe Coords)  -- ^ ???
+  = Generator                          -- ^ Generating universe
+  | Iterator                           -- ^ Simulating universe
+  | CfgMenu { cnum :: Int }             -- ^ Loading configs from DB to universe
+  | ObjMenu { onum :: Int 
+            , crd :: (Maybe Coords) 
+            }                          -- ^ Same for objects
 
 -- | Universe is a field (matrix) of cells in certain states.
 type Universe = Matrix Cell
@@ -73,14 +75,14 @@ defState = matrix size size ( \ _ -> Dead )
 
 -- * Functions to convert object and config coords to universe
 
--- | ???
+-- | convert object (interpreted as object) to universe
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
 loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
                             where x = (maximum $ map fst (coords obj)) `div` 2
                                   y = (maximum $ map snd (coords obj)) `div` 2
 loadObject u _ Nothing = u
 
--- | ???
+-- | detectd which cells should be set as Half
 loadObjectAux :: Coords -> Coords -> Coords -> Universe -> Universe
 loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
                                                 (y <= size) && (y >= 1) 
@@ -89,7 +91,7 @@ loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
                                              where x = x1 + x2 - x0
                                                    y = y1 + y2 - y0
 
--- | ???
+-- | convert object (interpeted as config) to universe
 loadConfig :: Object -> Universe
 loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
                         defState (coords obj)
