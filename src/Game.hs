@@ -77,10 +77,24 @@ defState = matrix size size ( \ _ -> Dead )
 
 -- | convert object (interpreted as object) to universe
 loadObject :: Universe -> Object -> Maybe Coords -> Universe
-loadObject u obj (Just c) = foldr (loadObjectAux (x, y) c) u (coords obj)
-                            where x = (maximum $ map fst (coords obj)) `div` 2
-                                  y = (maximum $ map snd (coords obj)) `div` 2
 loadObject u _ Nothing = u
+loadObject u obj (Just mouse) = foldr (setElem Half) u (filter insideUniverse cs)
+  where
+    Object _ cs = placeObject obj mouse
+    insideUniverse (x, y) = x <= size && x >= 1 && y <= size && y >= 1
+
+placeObject :: Object -> Coords -> Object
+placeObject (Object name cs) mouse = Object name $ map (placePoint mouse (cx, cy)) cs
+  where
+    cx = (maximum $ map fst cs) `div` 2
+    cy = (maximum $ map snd cs) `div` 2
+
+placePoint :: Coords  -- ^ mouse position
+           -> Coords  -- ^ object center
+           -> Coords  -- ^ point
+           -> Coords
+placePoint (cx, cy) (mx, my) (x, y) = (x + mx - cx, y + mx - my)
+
 
 -- | detectd which cells should be set as Half
 loadObjectAux :: Coords -> Coords -> Coords -> Universe -> Universe
@@ -159,5 +173,7 @@ stepUniverseAux oldu newu (x, y) = stepUniverseAux
 
 -- | Universe updater.
 stepUniverse :: Universe -> Universe
-stepUniverse u = stepUniverseAux u u (nrows u, ncols u)
-
+stepUniverse oldu = -- stepUniverseAux u u (nrows u, ncols u)
+  foldr (\pos -> setElem (stepCell oldu pos) pos) oldu coords
+  where
+    coords = [ (i, j) | i <- [1..nrows u], j <- [1..ncols u] ]

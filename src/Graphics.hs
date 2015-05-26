@@ -49,9 +49,40 @@ updater _ world@(World u Iterator _ _ _ _ a) = world { universe = stepUniverse u
                                                      , age = a + 1 }
 updater _ w = w
 
+type Menu = [Button]
+
+mainMenu :: Menu
+mainMenu
+
+configMenu :: Menu
+
+data Button = Button
+  { btnRect   :: Rect
+  , btnImg    :: Picture
+  , btnAction :: World -> IO World
+  }
+
+mkButton :: FilePath -> Point -> (World -> IO World) -> IO Button
+mkButton file corner action = do
+  img <- loadBMP file
+  case img of
+    Bitmap w h _ _ -> do
+      return (Button (Rect corner (w, h)) img action)
+    _ -> error "impossible"
+
+mainMenu :: IO Menu
+mainMenu = sequence
+  [ mkButton "img/start.bmp" (..) (\w -> w { state = Iterator })
+  , ]
+
+data Rect = Rect Point Vector
+
+inside :: Point -> Rect -> Bool
+
 -- | Handle mouse events in main menu (Generator state)
 generatorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
 generatorMouse e x y world
+    -- start button
     | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
       (y + offsetY >= h + 150 - 30) && (y + offsetY <= h + 150 + 30) =  
             case e of
@@ -194,6 +225,15 @@ keyMenuNavigation world step
                 Iterator -> 2
                 CfgMenu _ -> 3
                 ObjMenu _ _ -> 2
+
+handleMenu :: MyMouseEvent -> Point -> World -> IO World
+handleMenu e mouse w@World{ worldMenu = menu } = do
+  case find (\(_, btn) -> mouse `inside` btnRect btn) (zip [0..] menu) of
+    Just (n, btn) -> do
+      let w' = w { selected = n }
+      case e of
+        Click -> btnAction btn w'
+        Move  -> return w'
 
 -- | Handle events from mouse and keyboard
 handler :: Event -> World -> IO World
