@@ -36,10 +36,6 @@ data Objects = Objects
 -- | Similar to Objects, for whole configurations.
 type Configs = Objects
 
--- | Constant field size.
-size :: Int
-size = 25
-
 -- | Default state.
 defState :: Universe
 defState = matrix size size ( \ _ -> Dead )
@@ -68,8 +64,7 @@ placePoint (mx, my) (cx, cy) (x, y) = (x + mx - cx, y + my - cy)
 
 -- | convert object (interpeted as config) to universe
 loadConfig :: Object -> Universe
-loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
-                        defState (coords obj)
+loadConfig obj = foldr (\coords u -> setElem Half coords u) defState (coords obj)
 
 -- * Reading files from database
 

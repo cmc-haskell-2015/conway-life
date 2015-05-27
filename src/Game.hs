@@ -3,7 +3,6 @@
 module Game where
 
 import Data.Matrix
-import Graphics.Gloss
 
 -- | Cell coordinates in universe.
 type Coords = (Int, Int)
@@ -13,11 +12,15 @@ data Cell
   = Dead    -- ^ Dead (empty) cell.
   | Alive   -- ^ Alive cell.
   | Half    -- ^ This state is for placing the object from database and is used
-            -- in for GUI.
+            -- for GUI.
   deriving (Show)
 
 -- | Universe is a field (matrix) of cells in certain states.
 type Universe = Matrix Cell
+
+-- | Universe size in cells
+size :: Int
+size = 25
 
 -- * Functions to convert cell states
 

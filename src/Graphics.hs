@@ -3,6 +3,7 @@ module Graphics where
 
 import Data.Matrix
 import Data.Monoid
+import Data.List
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game
 import Game
@@ -13,13 +14,28 @@ import System.Exit
 data State
   = Generator                          -- ^ Generating universe
   | Iterator                           -- ^ Simulating universe
-  | CfgMenu { cnum :: Int }             -- ^ Loading configs from DB to universe
-  | ObjMenu { onum :: Int 
-            , crd :: (Maybe Coords) 
-            }                          -- ^ Same for objects
+  | CfgMenu Int                        -- ^ Loading configs from DB to universe
+  | ObjMenu Int (Maybe Coords)         -- ^ Same for objects
 
 -- | Id for menu items.
 type MenuItem = Int
+
+-- | Rectangle specidied by center point and size
+data Rect = Rect 
+  { center :: Point 
+  , rate   :: Vector
+  }
+
+-- | World menu
+type Menu = [Button]
+
+-- | Button in the menu
+data Button = Button
+  { btnRect   :: Rect
+  , btnImg    :: Picture
+  , btnNum    :: Int
+  , btnAction :: World -> IO World
+  }
 
 -- | All the main data structures put together.
 data World = World
@@ -29,35 +45,21 @@ data World = World
   , cfg       :: Configs      -- ^ Loaded configurations.
   , selected  :: MenuItem     -- ^ Selected menu item which is to be marked in
                               -- menu panel.
-  , pic       :: [Picture]    -- ^ Picture to be shown as world representation.
+  , menues    :: [Menu]       -- ^ Menu panels.
   , age       :: Integer      -- ^ Number of game iteration.
+  , pic       :: [Picture]    -- ^ Menu selectors.
   }
-
--- | Save current world as configuration.
-saveWorld :: World -> IO World
-saveWorld world = do
-    saveUni (universe world)
-    return world
 
 -- | Used in handling mouse events
 data MyMouseEvent
     = Move -- ^ when mouse moves
     | Click -- ^ when pressing left mouse button
 
--- | 'Convert' MyMouseEvent to Bool
-isClick :: MyMouseEvent -> Bool
-isClick Click = True
-isClick Move = False
-
--- | Getter for picture width
-getWidth :: Picture -> Float
-getWidth (Bitmap w _ _ _) = fromIntegral w
-getWidth _ = 0
-
--- | Getter for picture height
-getHeight :: Picture -> Float
-getHeight (Bitmap _ h _ _) = fromIntegral h
-getHeight _ = 0
+-- | Save current world as configuration.
+saveWorld :: World -> IO World
+saveWorld world = do
+    saveUni (universe world)
+    return world
 
 -- | Cell size
 cellSize :: Float
@@ -76,181 +78,99 @@ windowSize :: (Int, Int)
 windowSize = ((round cellSize) * size * 2, (round cellSize) * size)
 
 -- | Window width
-windowWidth :: Int
-windowWidth = fst windowSize
+windowWidth :: Float
+windowWidth = fromIntegral $ fst windowSize
 
 -- | Window height
-windowHeight :: Int
-windowHeight = snd windowSize
+windowHeight :: Float
+windowHeight = fromIntegral $ snd windowSize
+
+-- | 'Convert' MyMouseEvent to Bool
+isClick :: MyMouseEvent -> Bool
+isClick Click = True
+isClick Move = False
+
+-- | Get active menu from world
+activeMenu :: World -> Menu
+activeMenu world@World{ state = s, menues = m } = case s of
+        Generator -> m !! 0
+        Iterator -> m !! 1
+        CfgMenu _ -> m !! 2
+        ObjMenu _ _ -> m !! 3
 
 -- | Update the universe on each step
 updater :: Float -> World -> World
-updater _ world@(World u Iterator _ _ _ _ a) = world { universe = stepUniverse u
-                                                     , age = a + 1 }
+updater _ world@World{ universe = u, state = Iterator, age = a } = world 
+                                               { universe = stepUniverse u
+                                               , age = a + 1 
+                                               }
 updater _ w = w
 
-{-type Menu = [Button]
-
-mainMenu :: Menu
-mainMenu
-
-configMenu :: Menu
-
-data Button = Button
-  { btnRect   :: Rect
-  , btnImg    :: Picture
-  , btnAction :: World -> IO World
-  }
-
-mkButton :: FilePath -> Point -> (World -> IO World) -> IO Button
-mkButton file corner action = do
+-- | Create button
+mkButton :: FilePath -> Int -> Point -> (World -> IO World) -> IO Button
+mkButton file num center action = do
   img <- loadBMP file
   case img of
     Bitmap w h _ _ -> do
-      return (Button (Rect corner (w, h)) img action)
-    _ -> error "impossible"
+      return (Button (Rect center (fromIntegral w,fromIntegral h)) img num action)
+    _ -> exitFailure
 
-mainMenu :: IO Menu
-mainMenu = sequence
-  [ mkButton "img/start.bmp" (..) (\w -> w { state = Iterator })
-  , ]
+-- | Create generator menu
+mkGeneratorMenu :: IO Menu
+mkGeneratorMenu = sequence
+  [ mkButton "img/start.bmp" 1 (w, h + 150) (\world -> return world { state = Iterator, selected = 1 })
+  , mkButton "img/loadcfg.bmp" 2 (w, h + 90) (\world -> return world { state = CfgMenu 1, selected = 1 })
+  , mkButton "img/loadobj.bmp" 3 (w, h + 30) (\world -> return world { state = ObjMenu 1 Nothing, selected = 1 })
+  , mkButton "img/clear.bmp" 4 (w, h - 30) (\world -> return world { universe = defState })
+  , mkButton "img/save.bmp" 5 (w, h - 90) (\world -> saveWorld world)
+  , mkButton "img/exit.bmp" 6 (w, h - 150) (\_ -> exitSuccess) ]
+  where
+    w = 1.5 * windowHeight
+    h = windowHeight / 2
 
-data Rect = Rect Point Vector
+-- | Create iterator menu
+mkIteratorMenu :: IO Menu
+mkIteratorMenu = sequence
+  [ mkButton "img/stop.bmp" 1 (w, h + 30) (\world -> return world { state = Generator, selected = 1 })
+  , mkButton "img/exit.bmp" 2 (w, h - 30) (\_ -> exitSuccess) ]
+  where
+    w = 1.5 * windowHeight
+    h = windowHeight / 2
 
-inside :: Point -> Rect -> Bool-}
+-- | Create config menu
+mkCfgMenu :: IO Menu
+mkCfgMenu = sequence
+  [ mkButton "img/select.bmp" 1 (w, h - 60) selectConfig
+  , mkButton "img/back.bmp" 2 (w, h - 120) (\world -> return world { state = Generator, selected = 1 })
+  , mkButton "img/exit.bmp" 3 (w, h - 180) (\_ -> exitSuccess)
+  , mkButton "img/left.bmp" (-1) (w - 200, h + 10) (\world -> return $ cfgMenuNavigation world (-1))
+  , mkButton "img/right.bmp" (-2) (w + 200, h + 10) (\world -> return $ cfgMenuNavigation world 1) ]
+  where
+    w = 1.5 * windowHeight
+    h = windowHeight / 2
 
--- | Handle mouse events in main menu (Generator state)
-generatorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
-generatorMouse e x y world
-    -- start button
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h + 150 - 30) && (y + offsetY <= h + 150 + 30) =  
-            case e of
-                Click -> return world { state = Iterator, selected = 1 }
-                Move -> return world { selected = 1 }
-    | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
-      (y + offsetY >= h + 90 - 30) && (y + offsetY <= h + 90 + 30) =  
-            case e of
-                Click -> return world { state = CfgMenu 1, selected = 1 }
-                Move -> return world { selected = 2 }
-    | (x + offsetX >= w - 125) && (x + offsetX <= w + 125) &&
-      (y + offsetY >= h + 30 - 30) && (y + offsetY <= h + 30 + 30) =  
-            case e of
-                Click -> return world { state = ObjMenu 1 Nothing, selected = 1}
-                Move -> return world { selected = 3 }
-    | (x + offsetX >= w - 60) && (x + offsetX <= w + 60) &&
-      (y + offsetY >= h - 30 - 30) && (y + offsetY <= h - 30 + 30) =  
-            case e of
-                Click -> return world { universe = defState } 
-                Move -> return world { selected = 4 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 90 - 30) && (y + offsetY <= h - 90 + 30) =  
-            case e of
-                Click -> saveWorld world
-                Move -> return world { selected = 5 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150 - 30) && (y + offsetY <= h - 150 + 30) =  
-            case e of
-                Click -> exitSuccess
-                Move -> return world { selected = 6 }
-    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) && (isClick e) = let 
-            u = universe world in return world { universe = 
-                    (setElem (inverseCell $ u ! (i, j)) (i, j) u) }
-    | otherwise = return world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
-          i = round ((x + offsetX + cellSize / 2) / cellSize)
-          j = round ((y + offsetY + cellSize / 2) / cellSize)
+selectConfig :: World -> IO World
+selectConfig world@World{ state = CfgMenu n } = return world { universe = halfToAlive $ loadConfig $ 
+                                                   	           (list (cfg world)) !! (n - 1)
+                                                             , state = Generator
+                                                             , selected = 1 }
+selectConfig _ = exitFailure
 
--- | Handle mouse events during simulation (Iterator state)
-iteratorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
-iteratorMouse e x y world
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h) && (y + offsetY <= h + 60) =  
-            case e of
-                Click -> return world { state = Generator, selected = 1 }
-                Move -> return world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 60) && (y + offsetY <= h) =  
-            case e of
-                Click -> exitSuccess
-                Move -> return world { selected = 2 }
-    | otherwise = return world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
+-- | Create object menu
+mkObjMenu :: IO Menu
+mkObjMenu = sequence
+  [ mkButton "img/back.bmp" 1 (w, h - 60) (\world -> return world { state = Generator, selected = 1 })
+  , mkButton "img/exit.bmp" 2 (w, h - 120) (\_ -> exitSuccess)
+  , mkButton "img/left.bmp" (-1) (w - 120, h + 10) (\world -> return $ objMenuNavigation world (-1))
+  , mkButton "img/right.bmp" (-2) (w + 120, h + 10) (\world -> return $ objMenuNavigation world 1) ]
+  where
+    w = 1.5 * windowHeight
+    h = windowHeight / 2
 
--- | Handle mouse events in menu for loading configs (CfgMenu state)
-cfgMenuMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
-cfgMenuMouse e x y world
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            case e of
-                Click -> return world { universe = halfToAlive $ loadConfig $ 
-                                        (list c) !! (n - 1), state = Generator }
-                Move -> return world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            case e of
-                Click -> return world { state = Generator, selected = 1 }
-                Move -> return world { selected = 2 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 210) && (y + offsetY <= h - 150) =  
-            case e of
-                Click -> exitSuccess
-                Move -> return world { selected = 3 }
-    | (x + offsetX >= w - 200 - 16) && (x + offsetX <= w - 200 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) && 
-      (isClick e) = if n == 1 then return world { state = CfgMenu (num c) }
-                              else return world { state = CfgMenu (n - 1) }
-    | (x + offsetX >= w + 200 - 16) && (x + offsetX <= w + 200 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
-      (isClick e) = if n == (num c) then return world { state = CfgMenu 1 }
-                                    else return world { state = CfgMenu (n + 1)}
-    | otherwise = return world
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
-          c = cfg world
-          n = cnum $ state world
-
--- | Handle mouse events in menu for loading objects (ObjMenu state)
-objMenuMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
-objMenuMouse e x y world
-    | (x + offsetX >= w - 65) && (x + offsetX <= w + 65) &&
-      (y + offsetY >= h - 90) && (y + offsetY <= h - 30) =  
-            case e of
-                Click -> return world { state = Generator, selected = 1 }
-                Move -> return world { selected = 1 }
-    | (x + offsetX >= w - 50) && (x + offsetX <= w + 50) &&
-      (y + offsetY >= h - 150) && (y + offsetY <= h - 90) =  
-            case e of
-                Click -> exitSuccess
-                Move -> return world { selected = 2 }
-    | (x + offsetX >= w - 120 - 16) && (x + offsetX <= w - 120 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
-      (isClick e) = if n == 1 then return world { state = ObjMenu (num o) c }
-                              else return world { state = ObjMenu (n - 1) c }
-    | (x + offsetX >= w + 120 - 16) && (x + offsetX <= w + 120 + 16) &&
-      (y + offsetY >= h + 10 - 16) && (y + offsetY <= h + 10 + 16) &&
-      (isClick e) = if n == (num o) then return world { state = ObjMenu 1 c }
-                                else return world { state = ObjMenu (n + 1) c }
-    | (isClick e) = return world { universe = halfToAlive $ 
-            loadObject (universe world) ((list o) !! (n - 1)) (Just (i, j)) }
-    | otherwise = return world { state = ObjMenu n (Just (i, j)) }
-    where offsetX = fromIntegral windowWidth / 2
-          offsetY = fromIntegral windowHeight / 2
-          w = 1.5 * (fromIntegral windowHeight)
-          h = (fromIntegral windowHeight) / 2
-          i = round ((x + offsetX + cellSize / 2) / cellSize)
-          j = round ((y + offsetY + cellSize / 2) / cellSize)
-          o = obj world
-          n = onum $ state world
-          c = crd $ state world
+-- | Check if coords inside rectangle
+insideRect :: Point -> Rect -> Bool
+insideRect (x, y) (Rect (cx, cy) (w, h)) = x >= cx - w / 2 && x <= cx + w / 2 &&
+                                           y >= cy - h / 2 && y <= cy + h / 2
 
 -- | Function for menu navigation by the up & down keys
 -- Int parameter is step and should be 1 or -1
@@ -260,38 +180,62 @@ keyMenuNavigation world step
     | m + step > n = world { selected = 1 }
     | otherwise = world { selected = m + step }
     where m = selected world
-          n = case (state world) of
-                Generator -> 6
-                Iterator -> 2
-                CfgMenu _ -> 3
-                ObjMenu _ _ -> 2
+          n = length $ filter (\btn-> btnNum btn > 0) (activeMenu world)
 
-{-handleMenu :: MyMouseEvent -> Point -> World -> IO World
-handleMenu e mouse w@World{ worldMenu = menu } = do
-  case find (\(_, btn) -> mouse `inside` btnRect btn) (zip [0..] menu) of
-    Just (n, btn) -> do
-      let w' = w { selected = n }
-      case e of
-        Click -> btnAction btn w'
-        Move  -> return w'-}
+-- | Change configs by left & right keys
+cfgMenuNavigation :: World -> Int -> World
+cfgMenuNavigation world@World{ state = CfgMenu n, cfg = c } step
+    | n + step < 1 = world { state = CfgMenu (num c) }
+    | n + step > (num c) = world { state = CfgMenu 1 }
+    | otherwise = world { state = CfgMenu (n + step) }
+cfgMenuNavigation w _ = w
+
+-- | Change objects by left & right keys
+objMenuNavigation :: World -> Int -> World
+objMenuNavigation world@World{ state = ObjMenu n x, obj = o } step
+    | n + step < 1 = world { state = ObjMenu (num o) x }
+    | n + step > (num o) = world { state = ObjMenu 1 x }
+    | otherwise = world { state = ObjMenu (n + step) x }
+objMenuNavigation w _ = w
+
+-- | Handle buttons events
+handleMenu :: MyMouseEvent -> Point -> World -> IO World
+handleMenu e (x, y) w = 
+  case find (\btn -> (nx, ny) `insideRect` btnRect btn) menu of
+    Just btn -> case e of
+        Click -> btnAction btn w
+        Move  -> if btnNum btn > 0 then return w { selected = btnNum btn }
+                                   else return w
+    Nothing -> handleMouse e (nx, ny) w
+  where menu = activeMenu w
+        nx = x + windowWidth / 2
+        ny = y + windowHeight / 2
+
+-- | Handle mouse events
+handleMouse :: MyMouseEvent -> Point -> World -> IO World
+handleMouse e (x, y) world@World{ universe = u, state = s, obj = o }
+    | (i <= size) && (i >= 1) && (j <= size) && (j >= 1) && (isClick e) && isGenerator = 
+	return world { universe = (setElem (inverseCell $ u ! (i, j)) (i, j) u) }
+    | (objMenu >= 0) && (isClick e) = return world { universe = halfToAlive $ 
+        loadObject u ((list o) !! (objMenu - 1)) (Just (i, j)) }
+    | (objMenu >= 0) = return world { state = ObjMenu objMenu (Just (i, j)) }
+    | otherwise = return world
+    where i = round ((x + cellSize / 2) / cellSize)
+          j = round ((y + cellSize / 2) / cellSize)
+	  isGenerator = case s of
+		Generator -> True
+		_ -> False
+	  objMenu = case s of
+		ObjMenu n _ -> n
+		_ -> -1		
 
 -- | Handle events from mouse and keyboard
 handler :: Event -> World -> IO World
 -- Mouse Events
 -- Click
-handler (EventKey (MouseButton LeftButton) Down _ (x, y)) 
-    world@(World _ s _ _ _ _ _) = case s of
-        Generator -> generatorMouse Click x y world
-        Iterator -> iteratorMouse Click x y world
-        CfgMenu _ -> cfgMenuMouse Click x y world
-        ObjMenu _ _ -> objMenuMouse Click x y world
+handler (EventKey (MouseButton LeftButton) Down _ (x, y)) world = handleMenu Click (x, y) world
 -- Move
-handler (EventMotion (x, y)) 
-    world@(World _ s _ _ _ _ _) = case s of
-        Generator -> generatorMouse Move x y world
-        Iterator -> iteratorMouse Move x y world
-        CfgMenu _ -> cfgMenuMouse Move x y world
-        ObjMenu _ _ -> objMenuMouse Move x y world
+handler (EventMotion (x, y)) world = handleMenu Move (x, y) world
 -- Keyboard Events
 -- Key down for menu navigation
 handler (EventKey (SpecialKey KeyDown) Down _ _) world = 
@@ -299,57 +243,20 @@ handler (EventKey (SpecialKey KeyDown) Down _ _) world =
 -- Key up for menu navigation
 handler (EventKey (SpecialKey KeyUp) Down _ _) world = 
     return $ keyMenuNavigation world (-1)
--- Generator events
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
-    world@(World u Generator o c m p a) = case m of
-    1 -> return $ World u Iterator o c 1 p a
-    2 -> return $ World u (CfgMenu 1) o c 1 p a
-    3 -> return $ World u (ObjMenu 1 Nothing) o c 1 p a
-    4 -> return $ World defState Generator o c m p a
-    5 -> saveWorld world
-    6 -> exitSuccess
---Iterator Events
---Enter
-handler (EventKey (SpecialKey KeyEnter) Down _ _) 
-    world@(World u Iterator o c m p a) = case m of
-    1 -> return $ World u Generator o c 1 p a
-    2 -> exitSuccess
+    world@World { state = s, selected = sel, menues = m } = btnAction (menu !! (sel - 1)) world
+  where menu = activeMenu world
 --CfgMenu Events
 --Key right
-handler (EventKey (SpecialKey KeyRight) Down _ _) 
-    world@(World _ (CfgMenu n) _ c _ _ _)
-    | n == (num c) = return $ world { state = CfgMenu 1 }
-    | otherwise = return $ world { state = CfgMenu (n + 1) }
+handler (EventKey (SpecialKey KeyRight) Down _ _) world@World{ state = CfgMenu n } = return $ cfgMenuNavigation world 1
 --Key left
-handler (EventKey (SpecialKey KeyLeft) Down _ _) 
-    world@(World _ (CfgMenu n) _ c _ _ _)
-    | n == 1 = return $ world { state = CfgMenu (num c) }
-    | otherwise = return $ world { state = CfgMenu (n - 1) }
---Enter
-handler (EventKey (SpecialKey KeyEnter) Down _ _) 
-    world@(World u (CfgMenu n) o c m p a) = case m of
-    1 -> return $ world { universe = halfToAlive $ loadConfig $ 
-                                        (list c) !! (n - 1)
-                        , state = Generator }
-    2 -> return $ World u Generator o c 1 p a
-    3 -> exitSuccess
+handler (EventKey (SpecialKey KeyLeft) Down _ _) world@World{ state = CfgMenu n } = return $ cfgMenuNavigation world (-1)
 --ObjMenu Events
 --Key right
-handler (EventKey (SpecialKey KeyRight) Down _ _) 
-    world@(World _ (ObjMenu n c) o _ _ _ _)
-    | n == (num o) = return $ world { state = ObjMenu 1 c }
-    | otherwise = return $ world { state = ObjMenu (n + 1) c }
+handler (EventKey (SpecialKey KeyRight) Down _ _) world@World{ state = ObjMenu n _ } = return $ objMenuNavigation world 1
 --Key left
-handler (EventKey (SpecialKey KeyLeft) Down _ _) 
-    world@(World _ (ObjMenu n c) o _ _ _ _)
-    | n == 1 = return $ world { state = ObjMenu (num o) c }
-    | otherwise = return $ world { state = ObjMenu (n - 1) c }
---Enter
-handler (EventKey (SpecialKey KeyEnter) Down _ _) 
-    world@(World u (ObjMenu _ _) o c m p a) = case m of
-    1 -> return $ World u Generator o c 1 p a
-    2 -> exitSuccess
+handler (EventKey (SpecialKey KeyLeft) Down _ _) world@World{ state = ObjMenu n _ } = return $ objMenuNavigation world (-1)
 --ESC
 handler (EventKey (SpecialKey KeyEsc) Down _ _) world = exitSuccess
 --F2
@@ -359,23 +266,17 @@ handler _ w = return w
 
 -- | Render a picture
 renderer :: World -> Picture
-renderer (World u s o c m p a) = let offsetX = - fromIntegral windowWidth / 2
-                                     offsetY = - fromIntegral windowHeight / 2
-                                     menu = case s of
-                                        Generator -> drawMenu1 m p
-                                        Iterator -> drawMenu2 m p
-                                        CfgMenu n -> drawMenu3 m p n c
-                                        ObjMenu n _-> drawMenu4 m p n o
-                                     uni = case s of
-                                        Generator -> u
-                                        Iterator -> u
-                                        CfgMenu n -> loadConfig $ 
-                                            (list c) !! (n - 1)
-                                        ObjMenu n coords -> loadObject u 
-                                            ((list o) !! (n - 1)) coords
-                                  in translate offsetX offsetY $
-                                     pictures [(drawUniverse uni), 
-                                               (drawMenu a), menu]
+renderer w@(World u s o c sel m a p) = let offsetX = - windowWidth / 2
+                                           offsetY = - windowHeight / 2
+                                           uni = case s of
+                                        	Generator -> u
+                                        	Iterator -> u
+                                        	CfgMenu n -> loadConfig $ 
+                                            		(list c) !! (n - 1)
+                                        	ObjMenu n coords -> loadObject u 
+                                            		((list o) !! (n - 1)) coords
+                                        in translate offsetX offsetY $
+                                     	  pictures [(drawUniverse uni), (drawMenuBack a), (drawMenu w), (drawSelectors w)]
 
 -- | Create a picture as a list (superposition) of cells 
 drawUniverse :: Universe -> Picture
@@ -385,93 +286,44 @@ drawUniverse u = pictures [drawCell
                  | x <- [1 .. size], y <- [1 .. size]]
 
 -- | Drawing menu background
-drawMenu :: Integer -> Picture
-drawMenu age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $ 
-                    rectangleSolid h h, rectangleWire h h,
-                    translate (-100) (h/2 - 40) $ Scale 0.3 0.3 $ 
-                    Text $ "Iteration: " ++  (show age)]
-               where h = fromIntegral windowHeight
+drawMenuBack :: Integer -> Picture
+drawMenuBack age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $ rectangleSolid h h
+						      , rectangleWire h h
+                    				      , translate (-100) (h/2 - 40) $ Scale 0.3 0.3 $ 
+                    						Text $ "Iteration: " ++  (show age)]
+	where h = windowHeight
 
--- * Drawing menu items
+-- | Drawing menu buttons
+drawButtons :: Menu -> Picture
+drawButtons menu = pictures $ map drawButton menu
 
--- | for generator state
-drawMenu1 :: Int -> [Picture] -> Picture
-drawMenu1 m pic = let j = case m of
-                        1 -> h + 150
-                        2 -> h + 90
-                        3 -> h + 30
-                        4 -> h - 30
-                        5 -> h - 90
-                        6 -> h - 150
-                      i = case m of
-                        1 -> getWidth (pic !! 0) / 2
-                        2 -> getWidth (pic !! 1) / 2
-                        3 -> getWidth (pic !! 2) / 2
-                        4 -> getWidth (pic !! 3) / 2
-                        5 -> getWidth (pic !! 4) / 2
-                        6 -> getWidth (pic !! 5) / 2
-                  in pictures [translate w (h + 150) $ pic !! 0,
-                               translate w (h + 90) $ pic !! 1,
-                               translate w (h + 30) $ pic !! 2,
-                               translate w (h - 30) $ pic !! 3,
-                               translate w (h - 90) $ pic !! 4,
-                               translate w (h - 150) $ pic !! 5,
-                               translate (w - 30 - i) j $ pic !! 11,
-                               translate (w + 30 + i) j $ pic !! 12]
-                   where w = 1.5 * (fromIntegral windowHeight)
-                         h = (fromIntegral windowHeight) / 2
+-- | Draw one button
+drawButton :: Button -> Picture
+drawButton (Button (Rect (x, y) _) img _ _) = translate x y img
 
--- | for iterator state
-drawMenu2 :: Int -> [Picture] -> Picture
-drawMenu2 m pic = let j = if m == 1 then h + 30 else h - 30
-                      i = getWidth (pic !! 8) / 2
-                  in pictures [translate w (h + 30) $ pic !! 8,
-                               translate w (h - 30) $ pic !! 5,
-                               translate (w - 30 - i) j $ pic !! 11,
-                               translate (w + 30 + i) j $ pic !! 12]
-                  where w = 1.5 * (fromIntegral windowHeight)
-                        h = (fromIntegral windowHeight) / 2
+-- | Drawing full menu with buttons and text
+drawMenu :: World -> Picture
+drawMenu world@World{ state = s, obj = o, cfg = c } = 
+  let labels = case s of
+    	CfgMenu n -> [ translate (w - 75) (h + 50) $ Scale 0.2 0.2 $ Text $ "Config " ++ show n ++ "/" ++ show (num c)
+                     , translate (w - 80) h $ Scale 0.1 0.1 $ Text $ name $ (list c) !! (n - 1) ]
+    	ObjMenu n _ -> [ translate (w - 75) (h + 50) $ Scale 0.2 0.2 $ Text $ "Object " ++ show n ++ "/" ++ show (num o)
+                     , translate (w - 40) h $ Scale 0.2 0.2 $ Text $ name $ (list o) !! (n - 1)]
+    	_ -> [] 
+  in pictures $ [drawButtons menu] ++ labels
+  where 
+    w = 1.5 * windowHeight
+    h = windowHeight / 2
+    menu = activeMenu world
 
--- | for CfgMenu state
-drawMenu3 :: Int -> [Picture] -> Int -> Configs -> Picture
-drawMenu3 m pic n c = let j = case m of
-                                1 -> h - 60
-                                2 -> h - 120
-                                3 -> h - 180
-                          i = if m == 1 then getWidth (pic !! 6) / 2
-                                        else getWidth (pic !! 7) / 2
-                      in pictures [translate w (h - 60) $ pic !! 6,
-                                   translate w (h - 120) $ pic !! 7,
-                                   translate w (h - 180) $ pic !! 5,
-                                   translate (w - 200) (h + 10) $ pic !! 9,
-                                   translate (w + 200) (h + 10) $ pic !! 10,
-                                   translate (w - 30 - i) j $ pic !! 11,
-                                   translate (w + 30 + i) j $ pic !! 12,
-                                   translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
-                                    Text $ "Config " ++ show n ++ "/" ++ 
-                                                        show (num c),
-                                   translate (w - 80) h $ Scale 0.1 0.1 $
-                                    Text $ name $ (list c) !! (n - 1)]
-                      where w = 1.5 * (fromIntegral windowHeight)
-                            h = (fromIntegral windowHeight) / 2
-
--- | for ObjMenu state
-drawMenu4 :: Int -> [Picture] -> Int -> Objects -> Picture
-drawMenu4 m pic n o = let j = if m == 1 then h - 60 else h - 120
-                          i = getWidth (pic !! 7) / 2
-                      in pictures [translate w (h - 60) $ pic !! 7,
-                                   translate w (h - 120) $ pic !! 5,
-                                   translate (w - 120) (h + 10) $ pic !! 9,
-                                   translate (w + 120) (h + 10) $ pic !! 10,
-                                   translate (w - 30 - i) j $ pic !! 11,
-                                   translate (w + 30 + i) j $ pic !! 12,
-                                   translate (w - 75) (h + 50) $ Scale 0.2 0.2 $
-                                    Text $ "Object " ++ show n ++ "/" ++ 
-                                                        show (num o),
-                                   translate (w - 40) h $ Scale 0.2 0.2 $
-                                    Text $ name $ (list o) !! (n - 1)]
-                      where w = 1.5 * (fromIntegral windowHeight)
-                            h = (fromIntegral windowHeight) / 2
+-- | Drawing menu selectors
+drawSelectors :: World -> Picture
+drawSelectors world@World{ selected = s, pic = p } = pictures [ translate (x - width / 2 - 30) y (p !! 0)
+							      , translate (x + width / 2 + 30) y (p !! 1) ]
+  where 
+    x = fst . center. btnRect $ (activeMenu world) !! (s - 1)
+    y = snd . center. btnRect $ (activeMenu world) !! (s - 1)
+    width = fst . rate. btnRect $ (activeMenu world) !! (s - 1)
 
 -- | Create picture of dead (empty rectangle) or alive (solid rectangle) cell
 drawCell :: Float -> Float -> Cell -> Picture
