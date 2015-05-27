@@ -5,6 +5,9 @@ module Game where
 import Data.Matrix
 import Graphics.Gloss
 
+-- | Cell coordinates in universe.
+type Coords = (Int, Int)
+
 -- | Cell - an atomic part of the world.
 data Cell
   = Dead    -- ^ Dead (empty) cell.
@@ -13,102 +16,8 @@ data Cell
             -- in for GUI.
   deriving (Show)
 
--- | Available states of the world
-data State
-  = Generator                          -- ^ Generating universe
-  | Iterator                           -- ^ Simulating universe
-  | CfgMenu { cnum :: Int }             -- ^ Loading configs from DB to universe
-  | ObjMenu { onum :: Int 
-            , crd :: (Maybe Coords) 
-            }                          -- ^ Same for objects
-
 -- | Universe is a field (matrix) of cells in certain states.
 type Universe = Matrix Cell
-
--- | Cell coordinates in universe.
-type Coords = (Int, Int)
-
--- | Location of the object is a list of the coordinates of those cells that 
--- form it.
-type Location = [Coords]
-
--- | Name of an object/configuration.
-type Name = String
-
--- | Id for menu items.
-type MenuItem = Int
-
--- | All the main data structures put together.
-data World = World
-  { universe  :: Universe     -- ^ Matrix of cells.
-  , state     :: State        -- ^ Current state of the world.
-  , obj       :: Objects      -- ^ Loaded objects.
-  , cfg       :: Configs      -- ^ Loaded configurations.
-  , selected  :: MenuItem     -- ^ Selected menu item which is to be marked in
-                              -- menu panel.
-  , pic       :: [Picture]    -- ^ Picture to be shown as world representation.
-  , age       :: Integer      -- ^ Number of game iteration.
-  }
-
--- | Object loaded from config file.
-data Object = Object 
-  { name    :: Name       -- ^ Name of loaded config.
-  , coords  :: Location   -- ^ Loction of the object.
-  } deriving (Show)
-
--- | Loaded separate objects.
-data Objects = Objects 
-  { list :: [Object]   -- ^ The list of objects itself.
-  , num  :: Int        -- ^ The length of the list == number of objects.
-  }
-
--- | Similar to Objects, for whole configurations.
-type Configs = Objects
-
--- | Constant field size.
-size :: Int
-size = 25
-
--- | Default state.
-defState :: Universe
-defState = matrix size size ( \ _ -> Dead )
-
--- * Functions to convert object and config coords to universe
-
--- | convert object (interpreted as object) to universe
-loadObject :: Universe -> Object -> Maybe Coords -> Universe
-loadObject u _ Nothing = u
-loadObject u obj (Just mouse) = foldr (setElem Half) u (filter insideUniverse cs)
-  where
-    Object _ cs = placeObject obj mouse
-    insideUniverse (x, y) = x <= size && x >= 1 && y <= size && y >= 1
-
-placeObject :: Object -> Coords -> Object
-placeObject (Object name cs) mouse = Object name $ map (placePoint mouse (cx, cy)) cs
-  where
-    cx = (maximum $ map fst cs) `div` 2
-    cy = (maximum $ map snd cs) `div` 2
-
-placePoint :: Coords  -- ^ mouse position
-           -> Coords  -- ^ object center
-           -> Coords  -- ^ point
-           -> Coords
-placePoint (cx, cy) (mx, my) (x, y) = (x + mx - cx, y + mx - my)
-
-
--- | detectd which cells should be set as Half
-loadObjectAux :: Coords -> Coords -> Coords -> Universe -> Universe
-loadObjectAux (x0, y0) (x1, y1) (x2, y2) u = if (x <= size) && (x >= 1) &&
-                                                (y <= size) && (y >= 1) 
-                                             then setElem Half (x, y) u
-                                             else u
-                                             where x = x1 + x2 - x0
-                                                   y = y1 + y2 - y0
-
--- | convert object (interpeted as config) to universe
-loadConfig :: Object -> Universe
-loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
-                        defState (coords obj)
 
 -- * Functions to convert cell states
 
@@ -159,21 +68,8 @@ stepCellAux cell neighbours = let live = length (filter isAlive neighbours) in
 stepCell :: Universe -> Coords -> Cell
 stepCell u (x, y) = stepCellAux (u ! (x, y)) (getNeighbours u (x, y))
 
--- | Auxillary function to update the universe cell by cell.
-stepUniverseAux :: Universe -> Universe -> Coords -> Universe
-stepUniverseAux oldu newu (1, 1) = setElem (stepCell oldu (1, 1)) (1, 1) newu
-stepUniverseAux oldu newu (x, 1) = stepUniverseAux 
-                                   oldu 
-                                   (setElem (stepCell oldu (x, 1)) (x, 1) newu)
-                                   ((x - 1), (ncols oldu))
-stepUniverseAux oldu newu (x, y) = stepUniverseAux 
-                                   oldu 
-                                   (setElem (stepCell oldu (x, y)) (x, y) newu)
-                                   (x, (y - 1))
-
 -- | Universe updater.
 stepUniverse :: Universe -> Universe
-stepUniverse oldu = -- stepUniverseAux u u (nrows u, ncols u)
-  foldr (\pos -> setElem (stepCell oldu pos) pos) oldu coords
+stepUniverse oldu = foldr (\pos -> setElem (stepCell oldu pos) pos) oldu coords
   where
-    coords = [ (i, j) | i <- [1..nrows u], j <- [1..ncols u] ]
+    coords = [ (i, j) | i <- [1..nrows oldu], j <- [1..ncols oldu] ]

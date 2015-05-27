@@ -9,6 +9,36 @@ import Game
 import Files
 import System.Exit
 
+-- | Available states of the world
+data State
+  = Generator                          -- ^ Generating universe
+  | Iterator                           -- ^ Simulating universe
+  | CfgMenu { cnum :: Int }             -- ^ Loading configs from DB to universe
+  | ObjMenu { onum :: Int 
+            , crd :: (Maybe Coords) 
+            }                          -- ^ Same for objects
+
+-- | Id for menu items.
+type MenuItem = Int
+
+-- | All the main data structures put together.
+data World = World
+  { universe  :: Universe     -- ^ Matrix of cells.
+  , state     :: State        -- ^ Current state of the world.
+  , obj       :: Objects      -- ^ Loaded objects.
+  , cfg       :: Configs      -- ^ Loaded configurations.
+  , selected  :: MenuItem     -- ^ Selected menu item which is to be marked in
+                              -- menu panel.
+  , pic       :: [Picture]    -- ^ Picture to be shown as world representation.
+  , age       :: Integer      -- ^ Number of game iteration.
+  }
+
+-- | Save current world as configuration.
+saveWorld :: World -> IO World
+saveWorld world = do
+    saveUni (universe world)
+    return world
+
 -- | Used in handling mouse events
 data MyMouseEvent
     = Move -- ^ when mouse moves
@@ -59,7 +89,7 @@ updater _ world@(World u Iterator _ _ _ _ a) = world { universe = stepUniverse u
                                                      , age = a + 1 }
 updater _ w = w
 
-type Menu = [Button]
+{-type Menu = [Button]
 
 mainMenu :: Menu
 mainMenu
@@ -87,7 +117,7 @@ mainMenu = sequence
 
 data Rect = Rect Point Vector
 
-inside :: Point -> Rect -> Bool
+inside :: Point -> Rect -> Bool-}
 
 -- | Handle mouse events in main menu (Generator state)
 generatorMouse :: MyMouseEvent -> Float -> Float -> World -> IO World
@@ -236,14 +266,14 @@ keyMenuNavigation world step
                 CfgMenu _ -> 3
                 ObjMenu _ _ -> 2
 
-handleMenu :: MyMouseEvent -> Point -> World -> IO World
+{-handleMenu :: MyMouseEvent -> Point -> World -> IO World
 handleMenu e mouse w@World{ worldMenu = menu } = do
   case find (\(_, btn) -> mouse `inside` btnRect btn) (zip [0..] menu) of
     Just (n, btn) -> do
       let w' = w { selected = n }
       case e of
         Click -> btnAction btn w'
-        Move  -> return w'
+        Move  -> return w'-}
 
 -- | Handle events from mouse and keyboard
 handler :: Event -> World -> IO World

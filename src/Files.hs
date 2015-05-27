@@ -14,6 +14,63 @@ import Game
 -- | File contents.
 type Content = String
 
+-- | Location of the object is a list of the coordinates of those cells that 
+-- form it.
+type Location = [Coords]
+
+-- | Name of an object/configuration.
+type Name = String
+
+-- | Object loaded from config file.
+data Object = Object 
+  { name    :: Name       -- ^ Name of loaded config.
+  , coords  :: Location   -- ^ Loction of the object.
+  } deriving (Show)
+
+-- | Loaded separate objects.
+data Objects = Objects 
+  { list :: [Object]   -- ^ The list of objects itself.
+  , num  :: Int        -- ^ The length of the list == number of objects.
+  }
+
+-- | Similar to Objects, for whole configurations.
+type Configs = Objects
+
+-- | Constant field size.
+size :: Int
+size = 25
+
+-- | Default state.
+defState :: Universe
+defState = matrix size size ( \ _ -> Dead )
+
+-- * Functions to convert object and config coords to universe
+
+-- | convert object (interpreted as object) to universe
+loadObject :: Universe -> Object -> Maybe Coords -> Universe
+loadObject u _ Nothing = u
+loadObject u obj (Just mouse) = foldr (setElem Half) u (filter insideUniverse cs)
+  where
+    Object _ cs = placeObject obj mouse
+    insideUniverse (x, y) = x <= size && x >= 1 && y <= size && y >= 1
+
+placeObject :: Object -> Coords -> Object
+placeObject (Object name cs) mouse = Object name $ map (placePoint mouse (cx, cy)) cs
+  where
+    cx = (maximum $ map fst cs) `div` 2
+    cy = (maximum $ map snd cs) `div` 2
+
+placePoint :: Coords  -- ^ mouse position
+           -> Coords  -- ^ object center
+           -> Coords  -- ^ point
+           -> Coords
+placePoint (mx, my) (cx, cy) (x, y) = (x + mx - cx, y + my - cy)
+
+-- | convert object (interpeted as config) to universe
+loadConfig :: Object -> Universe
+loadConfig obj = foldr ( \ coords u -> setElem Half coords u) 
+                        defState (coords obj)
+
 -- * Reading files from database
 
 -- | Remove ./ and ../ from directory contents and extend path of files.
@@ -65,12 +122,6 @@ checkInts (Just x, Just y) (Just acc) = (pure [(x, y)]) <> (Just acc)
 checkInts _ _ = Nothing
 
 -- * Saving files to database
-
--- | Save current universe as configuration.
-saveWorld :: World -> IO World
-saveWorld world = do
-    saveUni (universe world)
-    return world
 
 -- | Create new file with unique name and save configuration.
 saveUni :: Universe -> IO ()
