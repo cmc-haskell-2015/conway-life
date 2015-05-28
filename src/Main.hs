@@ -33,4 +33,5 @@ main = do
               , selected = 1
               , menues = [generatorMenu, iteratorMenu, cfgMenu, objMenu]
               , age = 0
-	      , pic = [selector1, selector2] }
+	          , pic = [selector1, selector2] 
+              }

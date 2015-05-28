@@ -92,7 +92,7 @@ isClick Move = False
 
 -- | Get active menu from world
 activeMenu :: World -> Menu
-activeMenu world@World{ state = s, menues = m } = case s of
+activeMenu World{ state = s, menues = m } = case s of
         Generator -> m !! 0
         Iterator -> m !! 1
         CfgMenu _ -> m !! 2
@@ -238,14 +238,12 @@ handler (EventKey (MouseButton LeftButton) Down _ (x, y)) world = handleMenu Cli
 handler (EventMotion (x, y)) world = handleMenu Move (x, y) world
 -- Keyboard Events
 -- Key down for menu navigation
-handler (EventKey (SpecialKey KeyDown) Down _ _) world = 
-    return $ keyMenuNavigation world 1
+handler (EventKey (SpecialKey KeyDown) Down _ _) world = return $ keyMenuNavigation world 1
 -- Key up for menu navigation
-handler (EventKey (SpecialKey KeyUp) Down _ _) world = 
-    return $ keyMenuNavigation world (-1)
+handler (EventKey (SpecialKey KeyUp) Down _ _) world = return $ keyMenuNavigation world (-1)
 --Enter
 handler (EventKey (SpecialKey KeyEnter) Down _ _) 
-    world@World { state = s, selected = sel, menues = m } = btnAction (menu !! (sel - 1)) world
+    world@World { selected = sel } = btnAction (menu !! (sel - 1)) world
   where menu = activeMenu world
 --CfgMenu Events
 --Key right
@@ -269,12 +267,11 @@ renderer :: World -> Picture
 renderer w@(World u s o c sel m a p) = let offsetX = - windowWidth / 2
                                            offsetY = - windowHeight / 2
                                            uni = case s of
-                                        	Generator -> u
-                                        	Iterator -> u
                                         	CfgMenu n -> loadConfig $ 
                                             		(list c) !! (n - 1)
                                         	ObjMenu n coords -> loadObject u 
                                             		((list o) !! (n - 1)) coords
+                                            _ -> u
                                         in translate offsetX offsetY $
                                      	  pictures [(drawUniverse uni), (drawMenuBack a), (drawMenu w), (drawSelectors w)]
 
@@ -287,10 +284,10 @@ drawUniverse u = pictures [drawCell
 
 -- | Drawing menu background
 drawMenuBack :: Integer -> Picture
-drawMenuBack age = translate (1.5*h) (h/2) $ pictures [color (greyN 0.7) $ rectangleSolid h h
-						      , rectangleWire h h
-                    				      , translate (-100) (h/2 - 40) $ Scale 0.3 0.3 $ 
-                    						Text $ "Iteration: " ++  (show age)]
+drawMenuBack age = translate (1.5*h) (h/2) $ 
+    pictures [ color (greyN 0.7) $ rectangleSolid h h
+			 , rectangleWire h h
+             , translate (-100) (h/2 - 40) $ Scale 0.3 0.3 $ Text $ "Iteration: " ++  (show age)]
 	where h = windowHeight
 
 -- | Drawing menu buttons
